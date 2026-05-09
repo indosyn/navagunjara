@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { Pagination } from "@/components/ui/Pagination";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
@@ -30,86 +30,90 @@ function ProductsContent() {
   });
   const [loading, setLoading] = useState(true);
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    let allProducts: Record<string, unknown>[] = [];
-    let totalPages = 0;
-
-    if (tab === "ALL") {
-      const [jRes, cRes] = await Promise.all([
-        fetch(`/api/v1/jewelry?page=0&size=100`),
-        fetch(`/api/v1/clothing?page=0&size=100`),
-      ]);
-      const [jData, cData] = await Promise.all([jRes.json(), cRes.json()]);
-      allProducts = [
-        ...(jData.data?.content ?? []).map((p: Record<string, unknown>) => ({
-          ...p,
-          productType: "JEWELRY",
-        })),
-        ...(cData.data?.content ?? []).map((p: Record<string, unknown>) => ({
-          ...p,
-          productType: "CLOTHING",
-        })),
-      ];
-    } else {
-      const endpoint = tab.toLowerCase();
-      let url: string;
-      if (search) {
-        url = `/api/v1/${endpoint}/search?name=${encodeURIComponent(search)}&page=0&size=100`;
-      } else {
-        url = `/api/v1/${endpoint}?page=0&size=100`;
-      }
-      const res = await fetch(url);
-      const json = await res.json();
-      allProducts = (json.data?.content ?? []).map((p: Record<string, unknown>) => ({
-        ...p,
-        productType: tab,
-      }));
-    }
-
-    // Client-side filtering
-    let filtered = allProducts;
-
-    // Price range
-    if (minPrice) {
-      filtered = filtered.filter((p) => Number(p.price) >= Number(minPrice));
-    }
-    if (maxPrice) {
-      filtered = filtered.filter((p) => Number(p.price) <= Number(maxPrice));
-    }
-
-    // In stock only
-    if (inStockOnly) {
-      filtered = filtered.filter((p) => Number(p.stockQuantity ?? 0) > 0);
-    }
-
-    // Sort
-    if (sortBy === "price_asc") {
-      filtered.sort((a, b) => Number(a.price) - Number(b.price));
-    } else if (sortBy === "price_desc") {
-      filtered.sort((a, b) => Number(b.price) - Number(a.price));
-    } else if (sortBy === "name_asc") {
-      filtered.sort((a, b) => String(a.name).localeCompare(String(b.name)));
-    } else {
-      filtered.sort(
-        (a, b) =>
-          new Date(String(b.createdAt ?? 0)).getTime() -
-          new Date(String(a.createdAt ?? 0)).getTime()
-      );
-    }
-
-    // Paginate client-side
-    const pageSize = 12;
-    totalPages = Math.ceil(filtered.length / pageSize);
-    const paginated = filtered.slice(page * pageSize, (page + 1) * pageSize);
-
-    setData({ content: paginated, totalPages });
-    setLoading(false);
-  }, [tab, page, search, minPrice, maxPrice, sortBy, inStockOnly]);
-
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    let cancelled = false;
+
+    async function load() {
+      let allProducts: Record<string, unknown>[] = [];
+      let totalPages = 0;
+
+      if (tab === "ALL") {
+        const [jRes, cRes] = await Promise.all([
+          fetch(`/api/v1/jewelry?page=0&size=100`),
+          fetch(`/api/v1/clothing?page=0&size=100`),
+        ]);
+        const [jData, cData] = await Promise.all([jRes.json(), cRes.json()]);
+        allProducts = [
+          ...(jData.data?.content ?? []).map((p: Record<string, unknown>) => ({
+            ...p,
+            productType: "JEWELRY",
+          })),
+          ...(cData.data?.content ?? []).map((p: Record<string, unknown>) => ({
+            ...p,
+            productType: "CLOTHING",
+          })),
+        ];
+      } else {
+        const endpoint = tab.toLowerCase();
+        let url: string;
+        if (search) {
+          url = `/api/v1/${endpoint}/search?name=${encodeURIComponent(search)}&page=0&size=100`;
+        } else {
+          url = `/api/v1/${endpoint}?page=0&size=100`;
+        }
+        const res = await fetch(url);
+        const json = await res.json();
+        allProducts = (json.data?.content ?? []).map((p: Record<string, unknown>) => ({
+          ...p,
+          productType: tab,
+        }));
+      }
+
+      // Client-side filtering
+      let filtered = allProducts;
+
+      // Price range
+      if (minPrice) {
+        filtered = filtered.filter((p) => Number(p.price) >= Number(minPrice));
+      }
+      if (maxPrice) {
+        filtered = filtered.filter((p) => Number(p.price) <= Number(maxPrice));
+      }
+
+      // In stock only
+      if (inStockOnly) {
+        filtered = filtered.filter((p) => Number(p.stockQuantity ?? 0) > 0);
+      }
+
+      // Sort
+      if (sortBy === "price_asc") {
+        filtered.sort((a, b) => Number(a.price) - Number(b.price));
+      } else if (sortBy === "price_desc") {
+        filtered.sort((a, b) => Number(b.price) - Number(a.price));
+      } else if (sortBy === "name_asc") {
+        filtered.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      } else {
+        filtered.sort(
+          (a, b) =>
+            new Date(String(b.createdAt ?? 0)).getTime() -
+            new Date(String(a.createdAt ?? 0)).getTime()
+        );
+      }
+
+      // Paginate client-side
+      const pageSize = 12;
+      totalPages = Math.ceil(filtered.length / pageSize);
+      const paginated = filtered.slice(page * pageSize, (page + 1) * pageSize);
+
+      if (!cancelled) {
+        setData({ content: paginated, totalPages });
+        setLoading(false);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [tab, page, search, minPrice, maxPrice, sortBy, inStockOnly]);
 
   const changeTab = (t: Tab) => {
     setTab(t);
@@ -119,7 +123,7 @@ function ProductsContent() {
 
   const handleFilterApply = () => {
     setPage(0);
-    fetchProducts();
+    setLoading(true);
   };
 
   const handleFilterReset = () => {
@@ -131,14 +135,20 @@ function ProductsContent() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Products</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--color-foreground)] tracking-tight">Products</h1>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">Browse our curated collection</p>
+        </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="md:hidden text-sm text-amber-700 font-medium"
+          className="md:hidden inline-flex items-center gap-2 px-3 py-2 text-sm font-medium border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-raised)] transition-all"
         >
-          {showFilters ? "Hide Filters" : "Show Filters"}
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+          </svg>
+          {showFilters ? "Hide Filters" : "Filters"}
         </button>
       </div>
 
@@ -165,16 +175,21 @@ function ProductsContent() {
         <div className="flex-1">
           {/* Search bar */}
           <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
-              className="w-full max-w-md rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
+            <div className="relative max-w-md">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-muted)]" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(0);
+                }}
+                className="w-full rounded-lg border border-[var(--color-border)] hover:border-[var(--color-border-hover)] bg-white pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/40 focus:border-[var(--color-primary)] transition-all placeholder:text-[var(--color-muted)]/60"
+              />
+            </div>
           </div>
 
           {loading ? (
@@ -182,8 +197,12 @@ function ProductsContent() {
           ) : (
             <>
               {data.content.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  No products found matching your filters.
+                <div className="text-center py-16">
+                  <svg className="mx-auto w-14 h-14 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                  </svg>
+                  <p className="mt-4 text-[var(--color-foreground)] font-medium">No products found</p>
+                  <p className="mt-1 text-sm text-[var(--color-muted)]">Try adjusting your filters</p>
                 </div>
               ) : (
                 <ProductGrid

@@ -35,20 +35,17 @@ export function RazorpayCheckout({
 }: RazorpayCheckoutProps) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
-  const [sdkReady, setSdkReady] = useState(false);
+  const [sdkReady, setSdkReady] = useState(() => typeof window !== "undefined" && !!window.Razorpay);
 
   // Load Razorpay SDK
   useEffect(() => {
-    if (window.Razorpay) {
-      setSdkReady(true);
-      return;
-    }
+    if (sdkReady) return;
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
     script.onload = () => setSdkReady(true);
     document.body.appendChild(script);
-  }, []);
+  }, [sdkReady]);
 
   const handlePayment = async () => {
     if (!session) return;

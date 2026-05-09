@@ -88,49 +88,66 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+      <h1 className="text-3xl font-bold text-[var(--color-foreground)] tracking-tight mb-8">Checkout</h1>
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Address form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <h2 className="text-lg font-semibold">Delivery Address</h2>
-          <Input
-            label="Address"
-            required
-            {...register("deliveryAddress")}
-            error={errors.deliveryAddress?.message}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="City"
-              required
-              {...register("deliveryCity")}
-              error={errors.deliveryCity?.message}
-            />
-            <Input
-              label="State"
-              required
-              {...register("deliveryState")}
-              error={errors.deliveryState?.message}
-            />
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <div className="bg-white rounded-xl border border-[var(--color-border)] p-6">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-5">Delivery Address</h2>
+            <div className="space-y-4">
+              <Input
+                label="Address"
+                required
+                placeholder="Street address"
+                {...register("deliveryAddress")}
+                error={errors.deliveryAddress?.message}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="City"
+                  required
+                  {...register("deliveryCity")}
+                  error={errors.deliveryCity?.message}
+                />
+                <Input
+                  label="State"
+                  required
+                  {...register("deliveryState")}
+                  error={errors.deliveryState?.message}
+                />
+              </div>
+              <Input
+                label="Pincode"
+                required
+                maxLength={6}
+                placeholder="560001"
+                {...register("deliveryPincode")}
+                error={errors.deliveryPincode?.message}
+              />
+            </div>
           </div>
-          <Input
-            label="Pincode"
-            required
-            maxLength={6}
-            {...register("deliveryPincode")}
-            error={errors.deliveryPincode?.message}
-          />
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          {error ? (
+            <div className="flex items-center gap-2 text-sm text-[var(--color-error)] bg-red-50 px-4 py-3 rounded-lg">
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+              </svg>
+              {error}
+            </div>
+          ) : null}
           {!orderId ? (
-            <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-              {submitting ? "Creating Order..." : "Proceed to Payment"}
+            <Button type="submit" size="lg" className="w-full" loading={submitting}>
+              Proceed to Payment
             </Button>
           ) : (
-            <div className="space-y-3">
-              <p className="text-green-700 text-sm font-medium">
+            <div className="bg-white rounded-xl border border-[var(--color-border)] p-6 space-y-4">
+              <div className="flex items-center gap-2 text-sm text-[var(--color-success)] bg-green-50 px-4 py-3 rounded-lg">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
                 Order #{orderId} created. Complete payment below.
-              </p>
+              </div>
               <RazorpayCheckout
                 orderId={orderId}
                 amount={Math.round(totalPrice() * 100)}
@@ -142,21 +159,27 @@ export default function CheckoutPage() {
         </form>
 
         {/* Summary */}
-        <div className="border rounded-lg p-6 h-fit">
-          <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
+        <div className="border border-[var(--color-border)] rounded-xl p-6 bg-white h-fit sticky top-24">
+          <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Order Summary</h2>
           <div className="space-y-3 mb-4">
             {items.map((item) => (
               <div key={item.productId} className="flex justify-between text-sm">
-                <span>
-                  {item.name} × {item.quantity}
+                <span className="text-[var(--color-muted)]">
+                  {item.name} <span className="text-[var(--color-foreground)] font-medium">x {item.quantity}</span>
                 </span>
-                <span>{formatINR(item.price * item.quantity)}</span>
+                <span className="font-medium text-[var(--color-foreground)]">{formatINR(item.price * item.quantity)}</span>
               </div>
             ))}
           </div>
-          <div className="border-t pt-3 flex justify-between text-lg font-bold">
-            <span>Total</span>
-            <span className="text-amber-700">{formatINR(totalPrice())}</span>
+          <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
+            <div className="flex justify-between text-sm text-[var(--color-muted)]">
+              <span>Shipping</span>
+              <span className="text-[var(--color-success)] font-medium">Free</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold pt-2">
+              <span>Total</span>
+              <span className="text-[var(--color-primary)]">{formatINR(totalPrice())}</span>
+            </div>
           </div>
         </div>
       </div>

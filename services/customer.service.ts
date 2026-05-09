@@ -204,6 +204,7 @@ export const customerService = {
  * @internal
  */
 function omitPassword(customer: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password: _pw, ...rest } = customer;
   return rest;
 }

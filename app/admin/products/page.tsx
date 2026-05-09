@@ -19,13 +19,16 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     fetch(`/api/v1/${tab.toLowerCase()}?page=${page}&size=20`)
       .then((r) => r.json())
       .then((json) => {
-        setData(json.data ?? { content: [], totalPages: 0 });
-        setLoading(false);
+        if (!cancelled) {
+          setData(json.data ?? { content: [], totalPages: 0 });
+          setLoading(false);
+        }
       });
+    return () => { cancelled = true; };
   }, [tab, page]);
 
   return (
@@ -42,6 +45,7 @@ export default function AdminProductsPage() {
           <button
             key={t}
             onClick={() => {
+              setLoading(true);
               setTab(t);
               setPage(0);
             }}

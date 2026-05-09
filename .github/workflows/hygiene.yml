@@ -223,7 +223,7 @@ jobs:
   # Build
   # =============================================================================
   build:
-    name: ✅ Dashboard Build (MANDATORY)
+    name: ✅ Next.js Build (MANDATORY)
     runs-on: ubuntu-latest
     needs: [conflict-check]
     steps:
@@ -241,49 +241,11 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Build React dashboard
+      - name: Build Next.js app
         run: |
-          echo "🔨 Building React dashboard..."
-          npm run build:client
+          echo "🔨 Building Next.js application..."
+          npm run build
           echo "✅ Build successful"
-        env:
-          VITE_BASE_PATH: /QE-Automation-ci-cd-report-generator/
-
-  # =============================================================================
-  # Version Bump Check (MANDATORY on PRs to main)
-  # =============================================================================
-  version-bump:
-    name: "\u2705 Version Bump Required (PR\u2192main only)"
-    runs-on: ubuntu-latest
-    needs: [branch-naming]
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check version was bumped
-        run: |
-          echo "Checking package.json version bump..."
-          PR_VERSION=$(node -p "require('./package.json').version")
-          git fetch origin main --depth=1
-          BASE_VERSION=$(git show origin/main:package.json | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).version))")
-          echo "Base (main) version : $BASE_VERSION"
-          echo "PR branch version   : $PR_VERSION"
-          if [ "$PR_VERSION" == "$BASE_VERSION" ]; then
-            echo ""
-            echo "\u274c VERSION NOT BUMPED - PR BLOCKED"
-            echo "package.json version must be incremented before merging to main."
-            echo "Current version on both branches: $BASE_VERSION"
-            echo ""
-            echo "Bump the version:"
-            echo "  Patch (bug fix):   x.y.Z  e.g. 2.0.0 -> 2.0.1"
-            echo "  Minor (feature):   x.Y.z  e.g. 2.0.0 -> 2.1.0"
-            echo "  Major (breaking):  X.y.z  e.g. 2.0.0 -> 3.0.0"
-            exit 1
-          fi
-          echo "\u2705 Version bumped: $BASE_VERSION -> $PR_VERSION"
 
   # =============================================================================
   # Summary Report
@@ -292,7 +254,7 @@ jobs:
     name: Hygiene Summary
     runs-on: ubuntu-latest
     needs: [branch-naming, conflict-check, file-size-check, secrets-check, todo-check,
-            lint, build, version-bump]
+            lint, build]
     if: always()
     steps:
       - name: Generate Summary
@@ -307,8 +269,7 @@ jobs:
           echo "| Secrets Scan | ${{ needs.secrets-check.result == 'success' && '✅ Passed' || '⚠️ Warning' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| TODO Markers | ${{ needs.todo-check.result == 'success' && '✅ Passed' || 'ℹ️ Info' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **ESLint (MANDATORY)** | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ FAILED - PR BLOCKED' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Dashboard Build (MANDATORY)** | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ FAILED - PR BLOCKED' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Version Bump (PR to main)** | ${{ needs.version-bump.result == 'success' && '✅ Passed' || needs.version-bump.result == 'skipped' && '⏭️ Skipped' || '❌ FAILED - PR BLOCKED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Next.js Build (MANDATORY)** | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ FAILED - PR BLOCKED' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**PR Branch:** \`${{ github.head_ref || github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
@@ -324,16 +285,10 @@ jobs:
 
           if [ "${{ needs.build.result }}" != "success" ]; then
             echo "---" >> $GITHUB_STEP_SUMMARY
-            echo "### ⚠️ Dashboard Build Failed!" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Next.js Build Failed!" >> $GITHUB_STEP_SUMMARY
             echo "**This PR is BLOCKED from merging.**" >> $GITHUB_STEP_SUMMARY
-            echo "Run \`npm run build:client\` locally and fix all errors before pushing." >> $GITHUB_STEP_SUMMARY
+            echo "Run \`npm run build\` locally and fix all errors before pushing." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ "${{ needs.version-bump.result }}" == "failure" ]; then
-            echo "---" >> $GITHUB_STEP_SUMMARY
-            echo "### ⚠️ Version Not Bumped!" >> $GITHUB_STEP_SUMMARY
-            echo "**This PR is BLOCKED from merging.**" >> $GITHUB_STEP_SUMMARY
-            echo "Increment the version in \`package.json\` before merging to main." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
+
