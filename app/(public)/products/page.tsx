@@ -34,80 +34,87 @@ function ProductsContent() {
     let cancelled = false;
 
     async function load() {
-      let allProducts: Record<string, unknown>[] = [];
-      let totalPages = 0;
+      try {
+        let allProducts: Record<string, unknown>[] = [];
+        let totalPages = 0;
 
-      if (tab === "ALL") {
-        const [jRes, cRes] = await Promise.all([
-          fetch(`/api/v1/jewelry?page=0&size=100`),
-          fetch(`/api/v1/clothing?page=0&size=100`),
-        ]);
-        const [jData, cData] = await Promise.all([jRes.json(), cRes.json()]);
-        allProducts = [
-          ...(jData.data?.content ?? []).map((p: Record<string, unknown>) => ({
-            ...p,
-            productType: "JEWELRY",
-          })),
-          ...(cData.data?.content ?? []).map((p: Record<string, unknown>) => ({
-            ...p,
-            productType: "CLOTHING",
-          })),
-        ];
-      } else {
-        const endpoint = tab.toLowerCase();
-        let url: string;
-        if (search) {
-          url = `/api/v1/${endpoint}/search?name=${encodeURIComponent(search)}&page=0&size=100`;
+        if (tab === "ALL") {
+          const [jRes, cRes] = await Promise.all([
+            fetch(`/api/v1/jewelry?page=0&size=100`),
+            fetch(`/api/v1/clothing?page=0&size=100`),
+          ]);
+          const [jData, cData] = await Promise.all([jRes.json(), cRes.json()]);
+          allProducts = [
+            ...(jData.data?.content ?? []).map((p: Record<string, unknown>) => ({
+              ...p,
+              productType: "JEWELRY",
+            })),
+            ...(cData.data?.content ?? []).map((p: Record<string, unknown>) => ({
+              ...p,
+              productType: "CLOTHING",
+            })),
+          ];
         } else {
-          url = `/api/v1/${endpoint}?page=0&size=100`;
+          const endpoint = tab.toLowerCase();
+          let url: string;
+          if (search) {
+            url = `/api/v1/${endpoint}/search?name=${encodeURIComponent(search)}&page=0&size=100`;
+          } else {
+            url = `/api/v1/${endpoint}?page=0&size=100`;
+          }
+          const res = await fetch(url);
+          const json = await res.json();
+          allProducts = (json.data?.content ?? []).map((p: Record<string, unknown>) => ({
+            ...p,
+            productType: tab,
+          }));
         }
-        const res = await fetch(url);
-        const json = await res.json();
-        allProducts = (json.data?.content ?? []).map((p: Record<string, unknown>) => ({
-          ...p,
-          productType: tab,
-        }));
-      }
 
-      // Client-side filtering
-      let filtered = allProducts;
+        // Client-side filtering
+        let filtered = allProducts;
 
-      // Price range
-      if (minPrice) {
-        filtered = filtered.filter((p) => Number(p.price) >= Number(minPrice));
-      }
-      if (maxPrice) {
-        filtered = filtered.filter((p) => Number(p.price) <= Number(maxPrice));
-      }
+        // Price range
+        if (minPrice) {
+          filtered = filtered.filter((p) => Number(p.price) >= Number(minPrice));
+        }
+        if (maxPrice) {
+          filtered = filtered.filter((p) => Number(p.price) <= Number(maxPrice));
+        }
 
-      // In stock only
-      if (inStockOnly) {
-        filtered = filtered.filter((p) => Number(p.stockQuantity ?? 0) > 0);
-      }
+        // In stock only
+        if (inStockOnly) {
+          filtered = filtered.filter((p) => Number(p.stockQuantity ?? 0) > 0);
+        }
 
-      // Sort
-      if (sortBy === "price_asc") {
-        filtered.sort((a, b) => Number(a.price) - Number(b.price));
-      } else if (sortBy === "price_desc") {
-        filtered.sort((a, b) => Number(b.price) - Number(a.price));
-      } else if (sortBy === "name_asc") {
-        filtered.sort((a, b) => String(a.name).localeCompare(String(b.name)));
-      } else {
-        filtered.sort(
-          (a, b) =>
-            new Date(String(b.createdAt ?? 0)).getTime() -
-            new Date(String(a.createdAt ?? 0)).getTime()
-        );
-      }
+        // Sort
+        if (sortBy === "price_asc") {
+          filtered.sort((a, b) => Number(a.price) - Number(b.price));
+        } else if (sortBy === "price_desc") {
+          filtered.sort((a, b) => Number(b.price) - Number(a.price));
+        } else if (sortBy === "name_asc") {
+          filtered.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        } else {
+          filtered.sort(
+            (a, b) =>
+              new Date(String(b.createdAt ?? 0)).getTime() -
+              new Date(String(a.createdAt ?? 0)).getTime()
+          );
+        }
 
-      // Paginate client-side
-      const pageSize = 12;
-      totalPages = Math.ceil(filtered.length / pageSize);
-      const paginated = filtered.slice(page * pageSize, (page + 1) * pageSize);
+        // Paginate client-side
+        const pageSize = 12;
+        totalPages = Math.ceil(filtered.length / pageSize);
+        const paginated = filtered.slice(page * pageSize, (page + 1) * pageSize);
 
-      if (!cancelled) {
-        setData({ content: paginated, totalPages });
-        setLoading(false);
+        if (!cancelled) {
+          setData({ content: paginated, totalPages });
+        }
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
