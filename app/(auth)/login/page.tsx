@@ -39,7 +39,7 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] px-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block text-2xl font-bold text-[var(--color-primary)]">
@@ -48,7 +48,7 @@ function LoginForm() {
           <p className="mt-2 text-sm text-[var(--color-muted)]">Welcome back! Sign in to your account</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-[var(--color-border)] p-8">
+        <div className="bg-white rounded-2xl shadow-lg border border-[var(--color-border)] p-8 animate-slide-up">
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input
               label="Email"

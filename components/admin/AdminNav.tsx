@@ -40,14 +40,14 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-gray-900 text-white min-h-screen p-5">
+    <aside className="w-64 bg-gray-900 text-white min-h-screen p-5 flex flex-col">
       <div className="mb-8">
-        <Link href="/" className="text-xl font-bold text-amber-400">
+        <Link href="/" className="text-xl font-bold text-amber-400 hover:text-amber-300 transition-colors">
           Navagunjara
         </Link>
         <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
       </div>
-      <nav className="space-y-1">
+      <nav className="space-y-1 flex-1">
         {links.map((link) => {
           const active =
             link.href === "/admin"
@@ -57,9 +57,9 @@ export function AdminNav() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 active
-                  ? "bg-amber-700/80 text-white"
+                  ? "bg-amber-700/80 text-white shadow-sm"
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
               }`}
             >
@@ -69,6 +69,14 @@ export function AdminNav() {
           );
         })}
       </nav>
+      <div className="border-t border-gray-700 pt-4 mt-4">
+        <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white transition-all">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+          </svg>
+          Back to Store
+        </Link>
+      </div>
     </aside>
   );
 }

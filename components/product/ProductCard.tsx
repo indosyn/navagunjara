@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { useCart } from "@/hooks/useCart";
 import { formatINR } from "@/lib/utils";
 import { WishlistButton } from "@/components/product/WishlistButton";
+import { showToast } from "@/components/ui/Toast";
 
 interface ProductCardProps {
   id: string;
@@ -74,15 +75,16 @@ export function ProductCard({
           size="sm"
           className="w-full mt-3"
           disabled={outOfStock}
-          onClick={() =>
+          onClick={() => {
             addItem({
               productId: id,
               name,
               price: Number(price),
               imageUrl,
               productType,
-            })
-          }
+            });
+            showToast(`${name} added to cart`);
+          }}
         >
           {outOfStock ? "Out of Stock" : "Add to Cart"}
         </Button>

@@ -14,11 +14,13 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20 text-center">
-        <svg className="mx-auto w-16 h-16 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
-        </svg>
-        <h1 className="mt-4 text-2xl font-bold text-[var(--color-foreground)]">Your Cart is Empty</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-20 text-center animate-fade-in">
+        <div className="w-20 h-20 mx-auto rounded-2xl bg-[var(--color-surface-raised)] flex items-center justify-center mb-6">
+          <svg className="w-10 h-10 text-[var(--color-border)]" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Your Cart is Empty</h1>
         <p className="mt-2 text-sm text-[var(--color-muted)]">Start shopping to add items to your cart</p>
         <Link href="/products" className="mt-6 inline-block">
           <Button>Continue Shopping</Button>
@@ -28,15 +30,16 @@ export default function CartPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12 animate-fade-in">
       <h1 className="text-3xl font-bold text-[var(--color-foreground)] tracking-tight mb-8">Shopping Cart</h1>
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Items */}
-        <div className="lg:col-span-2 space-y-4">
-          {items.map((item) => (
+        <div className="lg:col-span-2 space-y-3">
+          {items.map((item, i) => (
             <div
               key={item.productId}
-              className="flex gap-4 border border-[var(--color-border)] rounded-xl p-4 bg-white"
+              className="flex gap-4 border border-[var(--color-border)] rounded-xl p-4 bg-white animate-slide-up"
+              style={{ animationDelay: `${i * 50}ms` }}
             >
               <div className="relative w-20 h-20 bg-[var(--color-surface-raised)] rounded-lg flex-shrink-0 overflow-hidden">
                 {item.imageUrl ? (
@@ -61,21 +64,25 @@ export default function CartPage() {
                   {formatINR(item.price)}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                  <button
-                    className="w-8 h-8 border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors flex items-center justify-center text-sm"
-                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                    aria-label="Decrease quantity"
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                  <button
-                    className="w-8 h-8 border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-surface-raised)] transition-colors flex items-center justify-center text-sm"
-                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                    aria-label="Increase quantity"
-                  >
-                    +
-                  </button>
+                  <div className="inline-flex items-center border border-[var(--color-border)] rounded-lg overflow-hidden">
+                    <button
+                      className="w-8 h-8 hover:bg-[var(--color-surface-raised)] transition-colors flex items-center justify-center text-sm"
+                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                      aria-label="Decrease quantity"
+                    >
+                      −
+                    </button>
+                    <span className="w-10 text-center text-sm font-medium border-x border-[var(--color-border)] h-8 flex items-center justify-center">
+                      {item.quantity}
+                    </span>
+                    <button
+                      className="w-8 h-8 hover:bg-[var(--color-surface-raised)] transition-colors flex items-center justify-center text-sm"
+                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
                   <button
                     className="ml-3 text-xs text-[var(--color-error)] hover:text-red-700 font-medium transition-colors"
                     onClick={() => removeItem(item.productId)}

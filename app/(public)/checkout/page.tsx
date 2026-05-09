@@ -88,7 +88,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12 animate-fade-in">
       <h1 className="text-3xl font-bold text-[var(--color-foreground)] tracking-tight mb-8">Checkout</h1>
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Address form */}

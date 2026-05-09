@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { ToastContainer } from "@/components/ui/Toast";
 
 function ShoppingBagIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -193,7 +194,7 @@ function Header() {
 }
 
 function Footer() {
-  const currentYear = 2025;
+  const currentYear = new Date().getFullYear();
 
   return (
     <footer className="bg-[var(--color-foreground)] text-white/60 mt-auto">
@@ -205,6 +206,21 @@ function Footer() {
             <p className="text-sm leading-relaxed">
               Discover handcrafted Indian jewelry and traditional clothing, curated with love and heritage.
             </p>
+            {/* Trust badges */}
+            <div className="flex items-center gap-3 mt-4">
+              <div className="flex items-center gap-1.5 text-xs text-white/40">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                Secure Payments
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/40">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                </svg>
+                Authentic
+              </div>
+            </div>
           </div>
 
           {/* Quick Links */}
@@ -259,6 +275,7 @@ export default function PublicLayout({
       <Header />
       <main id="main-content" className="flex-1">{children}</main>
       <Footer />
+      <ToastContainer />
     </>
   );
 }

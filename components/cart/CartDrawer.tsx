@@ -70,21 +70,23 @@ export function CartDrawer({
                     <p className="text-sm font-medium text-[var(--color-foreground)] truncate">{item.name}</p>
                     <p className="text-sm font-semibold text-[var(--color-primary)] mt-0.5">{formatINR(item.price)}</p>
                     <div className="flex items-center gap-1.5 mt-1.5">
-                      <button
-                        className="w-6 h-6 border border-[var(--color-border)] rounded text-xs flex items-center justify-center hover:bg-[var(--color-surface-raised)] transition-colors"
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                        aria-label="Decrease quantity"
-                      >
-                        -
-                      </button>
-                      <span className="text-xs w-6 text-center font-medium">{item.quantity}</span>
-                      <button
-                        className="w-6 h-6 border border-[var(--color-border)] rounded text-xs flex items-center justify-center hover:bg-[var(--color-surface-raised)] transition-colors"
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                        aria-label="Increase quantity"
-                      >
-                        +
-                      </button>
+                      <div className="inline-flex items-center border border-[var(--color-border)] rounded-md overflow-hidden">
+                        <button
+                          className="w-6 h-6 text-xs flex items-center justify-center hover:bg-[var(--color-surface-raised)] transition-colors"
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          aria-label="Decrease quantity"
+                        >
+                          −
+                        </button>
+                        <span className="text-xs w-7 text-center font-medium border-x border-[var(--color-border)] h-6 flex items-center justify-center">{item.quantity}</span>
+                        <button
+                          className="w-6 h-6 text-xs flex items-center justify-center hover:bg-[var(--color-surface-raised)] transition-colors"
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          aria-label="Increase quantity"
+                        >
+                          +
+                        </button>
+                      </div>
                       <button
                         className="ml-auto text-xs text-[var(--color-error)] hover:text-red-700 font-medium transition-colors"
                         onClick={() => removeItem(item.productId)}
