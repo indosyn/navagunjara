@@ -8,6 +8,7 @@ import { z } from "zod";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { RazorpayCheckout } from "@/components/payment/RazorpayCheckout";
 import { formatINR } from "@/lib/utils";
 import { useState } from "react";
 
@@ -28,6 +29,7 @@ export default function CheckoutPage() {
   const clearCart = useCart((s) => s.clearCart);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   const {
     register,
@@ -67,12 +69,22 @@ export default function CheckoutPage() {
         setSubmitting(false);
         return;
       }
-      clearCart();
-      router.push(`/account/orders/${json.data.id}`);
+      // Order created — show payment
+      setOrderId(String(json.data.id));
+      setSubmitting(false);
     } catch {
       setError("Something went wrong");
       setSubmitting(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    clearCart();
+    router.push(`/account/orders/${orderId}`);
+  };
+
+  const handlePaymentFailure = (reason: string) => {
+    setError(`Payment failed: ${reason}`);
   };
 
   return (
@@ -110,9 +122,23 @@ export default function CheckoutPage() {
             error={errors.deliveryPincode?.message}
           />
           {error && <p className="text-red-600 text-sm">{error}</p>}
-          <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-            {submitting ? "Placing Order..." : "Place Order"}
-          </Button>
+          {!orderId ? (
+            <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+              {submitting ? "Creating Order..." : "Proceed to Payment"}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-green-700 text-sm font-medium">
+                Order #{orderId} created. Complete payment below.
+              </p>
+              <RazorpayCheckout
+                orderId={orderId}
+                amount={Math.round(totalPrice() * 100)}
+                onSuccess={handlePaymentSuccess}
+                onFailure={handlePaymentFailure}
+              />
+            </div>
+          )}
         </form>
 
         {/* Summary */}

@@ -23,6 +23,11 @@ function Header() {
             <Link href="/products" className="hover:text-amber-700">
               Products
             </Link>
+            {session && (
+              <Link href="/wishlist" className="hover:text-amber-700">
+                Wishlist
+              </Link>
+            )}
             {session?.user.role === "ADMIN" && (
               <Link href="/admin" className="hover:text-amber-700">
                 Admin

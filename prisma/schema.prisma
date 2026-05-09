@@ -80,42 +80,59 @@ enum PaymentStatus {
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model Customer {
-  id           BigInt    @id @default(autoincrement())
-  firstName    String    @map("first_name") @db.VarChar(255)
-  lastName     String    @map("last_name") @db.VarChar(255)
-  email        String    @unique @db.VarChar(255)
-  phone        String    @db.VarChar(20)
-  password     String    @db.VarChar(255)
-  addressLine1 String?   @map("address_line1") @db.VarChar(500)
-  addressLine2 String?   @map("address_line2") @db.VarChar(500)
-  city         String?   @db.VarChar(100)
-  state        String?   @db.VarChar(100)
-  pincode      String?   @db.VarChar(10)
-  country      String    @default("IND") @db.VarChar(3)
-  createdAt    DateTime? @map("created_at")
-  updatedAt    DateTime? @map("updated_at")
+  id           BigInt         @id @default(autoincrement())
+  firstName    String         @map("first_name") @db.VarChar(255)
+  lastName     String         @map("last_name") @db.VarChar(255)
+  email        String         @unique @db.VarChar(255)
+  phone        String         @db.VarChar(20)
+  password     String         @db.VarChar(255)
+  addressLine1 String?        @map("address_line1") @db.VarChar(500)
+  addressLine2 String?        @map("address_line2") @db.VarChar(500)
+  city         String?        @db.VarChar(100)
+  state        String?        @db.VarChar(100)
+  pincode      String?        @db.VarChar(10)
+  country      String         @default("IND") @db.VarChar(3)
+  createdAt    DateTime?      @map("created_at")
+  updatedAt    DateTime?      @map("updated_at")
   orders       Order[]
+  reviews      Review[]
+  wishlist     WishlistItem[]
 
   @@map("customers")
 }
 
 model Product {
-  id            BigInt     @id @default(autoincrement())
-  productType   String     @map("product_type") @db.VarChar(31)
-  name          String     @db.VarChar(255)
+  id            BigInt         @id @default(autoincrement())
+  productType   String         @map("product_type") @db.VarChar(31)
+  name          String         @db.VarChar(255)
   description   String?
-  price         Decimal    @db.Decimal(12, 2)
-  stockQuantity Int        @map("stock_quantity")
-  imageUrl      String?    @map("image_url") @db.VarChar(500)
-  category      String?    @db.VarChar(50)
-  active        Boolean    @default(true)
-  createdAt     DateTime?  @map("created_at")
-  updatedAt     DateTime?  @map("updated_at")
+  price         Decimal        @db.Decimal(12, 2)
+  stockQuantity Int            @map("stock_quantity")
+  imageUrl      String?        @map("image_url") @db.VarChar(500)
+  category      String?        @db.VarChar(50)
+  active        Boolean        @default(true)
+  createdAt     DateTime?      @map("created_at")
+  updatedAt     DateTime?      @map("updated_at")
   jewelry       Jewelry?
   clothing      Clothing?
   orderItems    OrderItem[]
+  images        ProductImage[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
 
   @@map("products")
+}
+
+model ProductImage {
+  id        BigInt  @id @default(autoincrement())
+  productId BigInt  @map("product_id")
+  url       String  @db.VarChar(500)
+  publicId  String? @map("public_id") @db.VarChar(255)
+  alt       String? @db.VarChar(255)
+  sortOrder Int     @default(0) @map("sort_order")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
 }
 
 model Jewelry {
@@ -204,4 +221,32 @@ model Admin {
   updatedAt DateTime? @map("updated_at")
 
   @@map("admins")
+}
+
+model Review {
+  id         BigInt    @id @default(autoincrement())
+  productId  BigInt    @map("product_id")
+  customerId BigInt    @map("customer_id")
+  rating     Int       @db.SmallInt
+  title      String?   @db.VarChar(255)
+  comment    String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, customerId])
+  @@map("reviews")
+}
+
+model WishlistItem {
+  id         BigInt   @id @default(autoincrement())
+  customerId BigInt   @map("customer_id")
+  productId  BigInt   @map("product_id")
+  addedAt    DateTime @default(now()) @map("added_at")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+  @@map("wishlist_items")
 }

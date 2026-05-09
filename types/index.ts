@@ -59,15 +59,26 @@ export type UserRole = "USER" | "ADMIN";
 
 // ─── Product Types ─────────────────────────────────────────────────────────────
 
+export interface ProductImage {
+  id: string;
+  url: string;
+  publicId: string | null;
+  alt: string | null;
+  sortOrder: number;
+}
+
 export interface BaseProduct {
   id: string;
   name: string;
   description: string | null;
-  price: string; // Decimal serialized as string from Prisma
+  price: string;
   stockQuantity: number;
   imageUrl: string | null;
+  images: ProductImage[];
   category: string | null;
   active: boolean;
+  averageRating: number | null;
+  reviewCount: number;
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -205,4 +216,53 @@ export interface CartState {
   clearCart: () => void;
   totalItems: () => number;
   totalPrice: () => number;
+}
+
+// ─── Review Types ──────────────────────────────────────────────────────────────
+
+export interface Review {
+  id: string;
+  productId: string;
+  customerId: string;
+  customerName: string;
+  rating: number;
+  title: string | null;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewSummary {
+  averageRating: number;
+  totalReviews: number;
+  distribution: Record<number, number>;
+}
+
+// ─── Wishlist Types ────────────────────────────────────────────────────────────
+
+export interface WishlistItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productPrice: string;
+  productImageUrl: string | null;
+  productType: "JEWELRY" | "CLOTHING";
+  inStock: boolean;
+  addedAt: string;
+}
+
+// ─── Razorpay Types ────────────────────────────────────────────────────────────
+
+export interface RazorpayOrder {
+  id: string;
+  amount: number;
+  currency: string;
+  receipt: string;
+  status: string;
+}
+
+export interface RazorpayVerification {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
 }

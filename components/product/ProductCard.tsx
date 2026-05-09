@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "@/hooks/useCart";
 import { formatINR } from "@/lib/utils";
+import { WishlistButton } from "@/components/product/WishlistButton";
 
 interface ProductCardProps {
   id: string;
@@ -48,11 +49,14 @@ export function ProductCard({
         </div>
       </Link>
       <div className="p-4">
-        <Link href={`/products/${id}`}>
-          <h3 className="font-medium text-gray-900 truncate hover:text-amber-700">
-            {name}
-          </h3>
-        </Link>
+        <div className="flex items-start justify-between">
+          <Link href={`/products/${id}`} className="flex-1 min-w-0">
+            <h3 className="font-medium text-gray-900 truncate hover:text-amber-700">
+              {name}
+            </h3>
+          </Link>
+          <WishlistButton productId={id} className="text-lg ml-1" />
+        </div>
         <p className="mt-1 text-lg font-semibold text-amber-700">
           {formatINR(price)}
         </p>

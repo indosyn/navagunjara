@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "@/hooks/useCart";
 import { formatINR } from "@/lib/utils";
+import { ReviewSection } from "@/components/product/ReviewSection";
+import { WishlistButton } from "@/components/product/WishlistButton";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -76,7 +78,10 @@ export default function ProductDetailPage() {
 
         {/* Details */}
         <div>
-          <Badge label={product.productType as string} className="mb-3" />
+          <div className="flex items-center gap-3 mb-3">
+            <Badge label={product.productType as string} />
+            <WishlistButton productId={id} />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {product.name as string}
           </h1>
@@ -136,6 +141,9 @@ export default function ProductDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* Reviews */}
+      <ReviewSection productId={id} />
     </div>
   );
 }
