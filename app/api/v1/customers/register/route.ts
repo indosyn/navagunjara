@@ -14,8 +14,13 @@ import { registerCustomerSchema } from "@/lib/validations";
 import { customerService } from "@/services/customer.service";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
 const log = createLogger("api.customers.register");
+
+// 5 registration attempts per minute per IP
+const REGISTER_RATE_LIMIT = 5;
+const REGISTER_WINDOW_MS = 60_000;
 
 /**
  * Register a new customer account.
@@ -28,6 +33,16 @@ const log = createLogger("api.customers.register");
  */
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const { allowed, resetMs } = rateLimit(`register:${ip}`, REGISTER_RATE_LIMIT, REGISTER_WINDOW_MS);
+    if (!allowed) {
+      log.warn({ ip }, "Registration rate limit exceeded");
+      return NextResponse.json(
+        { success: false, message: "Too many registration attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(resetMs / 1000)) } }
+      );
+    }
+
     const body = await req.json();
     const parsed = registerCustomerSchema.safeParse(body);
     if (!parsed.success) {

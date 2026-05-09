@@ -17,6 +17,7 @@ export default function AdminProductsPage() {
     totalPages: number;
   }>({ content: [], totalPages: 0 });
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,6 +31,22 @@ export default function AdminProductsPage() {
       });
     return () => { cancelled = true; };
   }, [tab, page]);
+
+  async function handleDelete(id: string) {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/v1/${tab.toLowerCase()}/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setData((prev) => ({
+          ...prev,
+          content: prev.content.filter((p) => String(p.id) !== id),
+        }));
+      }
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   return (
     <div>
@@ -93,13 +110,20 @@ export default function AdminProductsPage() {
                       {String(p.stockQuantity)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex items-center gap-3">
                     <Link
                       href={`/admin/products/${p.id}/edit`}
                       className="text-amber-700 hover:underline text-sm"
                     >
                       Edit
                     </Link>
+                    <button
+                      onClick={() => handleDelete(String(p.id))}
+                      disabled={deleting === String(p.id)}
+                      className="text-red-600 hover:underline text-sm disabled:opacity-50"
+                    >
+                      {deleting === String(p.id) ? "Deleting…" : "Delete"}
+                    </button>
                   </td>
                 </tr>
               ))}

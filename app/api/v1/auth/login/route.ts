@@ -18,12 +18,17 @@ import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { createLogger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
 const log = createLogger("api.auth.login");
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET ?? "dev-secret"
 );
+
+// 10 login attempts per minute per IP
+const LOGIN_RATE_LIMIT = 10;
+const LOGIN_WINDOW_MS = 60_000;
 
 /**
  * Handle login requests.
@@ -36,6 +41,25 @@ const JWT_SECRET = new TextEncoder().encode(
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit by IP
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const { allowed, resetMs } = rateLimit(ip, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS);
+    if (!allowed) {
+      log.warn({ ip }, "Login rate limit exceeded");
+      return NextResponse.json(
+        { success: false, message: "Too many login attempts. Try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil(resetMs / 1000)),
+            "X-RateLimit-Remaining": "0",
+          },
+        }
+      );
+    }
+
+
+
     const body = await req.json();
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
