@@ -51,7 +51,10 @@ app/
     ├── jewelry/      # Jewelry CRUD + search
     ├── clothing/     # Clothing CRUD + search
     ├── orders/       # Order placement, cancellation
-    ├── payments/     # Razorpay stubs (Phase 2)
+    ├── payments/     # Razorpay create, verify, fail
+    ├── reviews/      # Product reviews & ratings
+    ├── wishlist/     # Customer wishlist
+    ├── images/       # Cloudinary image upload/delete
     └── admin/        # Dashboard stats, order management
 services/             # Business logic layer
 lib/                  # Auth, DB, logger, utils, validations
@@ -90,7 +93,16 @@ types/                # TypeScript interfaces & enums
 | PUT | `/api/v1/admin/orders/:id/status` | Admin | Update order status |
 | GET | `/api/v1/admin/orders/recent` | Admin | Recent orders |
 | GET | `/api/v1/admin/customers` | Admin | List customers |
-| POST | `/api/v1/payments/*` | User | 501 — Phase 2 |
+| POST | `/api/v1/payments/*` | User | Razorpay create, verify, fail |
+| GET | `/api/v1/reviews?productId=` | Public | Product reviews (paginated) |
+| POST | `/api/v1/reviews` | User | Submit review |
+| PUT | `/api/v1/reviews/:id` | User | Edit own review |
+| DELETE | `/api/v1/reviews/:id` | User/Admin | Delete review |
+| GET | `/api/v1/wishlist` | User | List wishlist |
+| POST | `/api/v1/wishlist` | User | Add to wishlist |
+| DELETE | `/api/v1/wishlist/:productId` | User | Remove from wishlist |
+| POST | `/api/v1/images/upload` | Admin | Upload product images (Cloudinary) |
+| DELETE | `/api/v1/images/:id` | Admin | Delete product image |
 
 ## Prerequisites
 
@@ -99,33 +111,80 @@ types/                # TypeScript interfaces & enums
 | Node.js | 20+ |
 | PostgreSQL | 14+ |
 | npm | 10+ |
+| Docker (optional) | 24+ |
 
 ## Quick Start
 
 ```bash
 # Clone & install
-git clone <repository-url>
+git clone https://github.com/indosyn/navagunjara.git
 cd navagunjara
 npm install
 
 # Database setup
+cp .env.local.example .env.local   # or create .env.local manually (see Environment Variables)
 npx prisma generate
 npx prisma db push
 npm run db:seed
 
-# Start development server
+# Start development server (UI + API on http://localhost:3000)
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
+> **Note:** Next.js serves both the UI and all `/api/v1/*` routes in a single process.
+> There is no separate backend to start — one command runs everything.
+
+## Running in Pre-prod / Production Mode
+
+```bash
+# 1. Build the production bundle
+npm run build
+
+# 2. Start the production server (UI + API on http://localhost:3000)
+npm start
+```
+
+### Using Docker Compose (recommended for pre-prod)
+
+Spins up **PostgreSQL + the app** in one command:
+
+```bash
+# Start everything (builds the image on first run)
+docker compose up -d
+
+# Seed the database (first time only)
+docker compose exec app npx prisma db push
+docker compose exec app npm run db:seed
+
+# View logs
+docker compose logs -f app
+
+# Stop
+docker compose down
+```
+
+App available at [http://localhost:3000](http://localhost:3000).
+
+### Pre-prod with External Database
+
+```bash
+# Set pre-prod database URL
+$env:DATABASE_URL = "postgresql://user:pass@preprod-host:5432/navagunjara?schema=public"
+
+# Build & start
+npm run build
+npm start
+```
+
 ## Scripts
 
 | Script | Purpose |
 |--------|---------|
-| `npm run dev` | Start dev server (Turbopack) |
+| `npm run dev` | Start dev server — UI + API (Turbopack) |
 | `npm run build` | Production build |
-| `npm start` | Start production server |
+| `npm start` | Start production server — UI + API |
 | `npm run lint` | ESLint check |
 | `npm test` | Run Jest unit tests |
 | `npm run test:watch` | Jest in watch mode |
@@ -135,6 +194,8 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run db:push` | Push schema to database |
 | `npm run db:seed` | Seed database |
 | `npm run db:studio` | Open Prisma Studio |
+| `docker compose up -d` | Start app + PostgreSQL via Docker |
+| `npx playwright test` | Run E2E smoke tests |
 
 ## Testing
 
@@ -162,8 +223,15 @@ npm run test:coverage # With coverage report
 | `AUTH_SECRET` | Auth.js session secret |
 | `JWT_SECRET` | JWT signing key |
 | `NEXTAUTH_URL` | Application base URL |
-| `RAZORPAY_KEY_ID` | Razorpay public key (Phase 2) |
-| `RAZORPAY_KEY_SECRET` | Razorpay secret key (Phase 2) |
+| `RAZORPAY_KEY_ID` | Razorpay public key |
+| `RAZORPAY_KEY_SECRET` | Razorpay secret key |
+| `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook HMAC secret |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Razorpay key (client-side) |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
+| `CLOUDINARY_API_KEY` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
+| `RESEND_API_KEY` | Resend email API key |
+| `RESEND_FROM_EMAIL` | Sender email address |
 
 ## CI/CD Workflows
 
