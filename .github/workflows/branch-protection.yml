@@ -1,0 +1,56 @@
+name: Branch Protection
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  block-direct-push:
+    name: Block Direct Push to Main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce PR-only merges to main
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          PUSHER="${{ github.actor }}"
+
+          echo "🔍 Commit: $COMMIT_MSG"
+          echo "👤 Pusher: $PUSHER"
+
+          # Allow PR merge commits (GitHub's standard merge commit message)
+          if echo "$COMMIT_MSG" | grep -qE "^Merge pull request #[0-9]+"; then
+            echo "✅ PR merge commit detected — allowed."
+            exit 0
+          fi
+
+          # Allow squash/rebase merges from PRs (contain PR number in message)
+          if echo "$COMMIT_MSG" | grep -qE "\(#[0-9]+\)$"; then
+            echo "✅ Squash/rebase merge from PR — allowed."
+            exit 0
+          fi
+
+          # Allow automated bot commits (badge updates, release bumps)
+          if echo "$COMMIT_MSG" | grep -qE "\[skip ci\]|\[bot\]|chore: update.*badges"; then
+            echo "✅ Automated bot commit — allowed."
+            exit 0
+          fi
+
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║         ❌  DIRECT PUSH TO MAIN IS NOT ALLOWED               ║"
+          echo "╠══════════════════════════════════════════════════════════════╣"
+          echo "║                                                              ║"
+          echo "║  All changes must go through a Pull Request.                 ║"
+          echo "║                                                              ║"
+          echo "║  Steps:                                                      ║"
+          echo "║    1. Create a branch: git checkout -b feature/your-change   ║"
+          echo "║    2. Push the branch: git push origin feature/your-change   ║"
+          echo "║    3. Open a PR targeting main                               ║"
+          echo "║    4. Get it reviewed and merged via GitHub                  ║"
+          echo "║                                                              ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          exit 1

@@ -1,0 +1,339 @@
+name: Hygiene Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+  push:
+    branches:
+      - develop
+      - main
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'fix/**'
+      - 'hotfix/**'
+      - 'release/**'
+      - 'chore/**'
+      - 'refactor/**'
+
+permissions:
+  pull-requests: write
+  contents: read
+  checks: write
+
+jobs:
+  # =============================================================================
+  # Branch Naming Convention Check
+  # =============================================================================
+  branch-naming:
+    name: Branch Naming Convention
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch naming convention
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          echo "🔍 Checking branch name: $BRANCH_NAME"
+
+          if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "develop" ]]; then
+            echo "✅ Protected branch '$BRANCH_NAME' - skipping naming convention check"
+            exit 0
+          fi
+
+          if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|fix|hotfix|release|chore|refactor|docs|test|ci|perf|build|style)/.+ ]]; then
+            echo "✅ Branch name '$BRANCH_NAME' follows naming convention"
+          else
+            echo "❌ Branch name '$BRANCH_NAME' does not follow naming convention"
+            echo ""
+            echo "📋 Valid patterns:"
+            echo "  - feature/description    : New feature development"
+            echo "  - bugfix/description     : Bug fixes"
+            echo "  - fix/description        : Quick fixes"
+            echo "  - hotfix/description     : Urgent production fixes"
+            echo "  - release/version        : Release preparation"
+            echo "  - chore/description      : Maintenance tasks"
+            echo "  - refactor/description   : Code refactoring"
+            echo "  - docs/description       : Documentation only changes"
+            echo "  - test/description       : Adding or updating tests"
+            echo "  - ci/description         : CI/CD pipeline changes"
+            echo "  - perf/description       : Performance improvements"
+            echo "  - build/description      : Build system / dependency changes"
+            echo "  - style/description      : Formatting / non-functional style"
+            exit 1
+          fi
+
+  # =============================================================================
+  # Merge Conflict Check
+  # =============================================================================
+  conflict-check:
+    name: Merge Conflict Detection
+    runs-on: ubuntu-latest
+    needs: [branch-naming]
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Check for merge conflict markers
+        run: |
+          echo "🔍 Checking for merge conflict markers..."
+          CONFLICT_FILES=$(git grep -l -E '^<<<<<<< |^=======|^>>>>>>>' -- ':!.github/workflows/*' || true)
+          if [ -n "$CONFLICT_FILES" ]; then
+            echo "❌ Merge conflict markers found in the following files:"
+            echo "$CONFLICT_FILES"
+            echo ""
+            echo "Please resolve these conflicts before proceeding."
+            exit 1
+          else
+            echo "✅ No merge conflict markers found."
+          fi
+
+  # =============================================================================
+  # File Size Check
+  # =============================================================================
+  file-size-check:
+    name: Large File Detection
+    runs-on: ubuntu-latest
+    needs: [branch-naming]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Check for large files
+        run: |
+          echo "🔍 Checking for large files (>5MB)..."
+          LARGE_FILES=$(find . -type f -size +5M -not -path "*/.git/*" -not -path "*/node_modules/*" -not -path "*/dist/*" || true)
+          if [ -n "$LARGE_FILES" ]; then
+            echo "⚠️ Large files detected (>5MB):"
+            echo "$LARGE_FILES"
+            echo ""
+            echo "Consider using Git LFS or excluding from repository"
+          else
+            echo "✅ No large files detected."
+          fi
+
+  # =============================================================================
+  # Sensitive Data Check
+  # =============================================================================
+  secrets-check:
+    name: Sensitive Data Detection
+    runs-on: ubuntu-latest
+    needs: [branch-naming]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Check for hardcoded credentials
+        run: |
+          echo "🔍 Scanning for potential secrets..."
+
+          PATTERNS=(
+            "password\s*=\s*['\"][^'\"]{4,}['\"]"
+            "api[_-]?key\s*=\s*['\"][^'\"]{8,}['\"]"
+            "secret\s*=\s*['\"][^'\"]{8,}['\"]"
+            "client[_-]?secret"
+            "github_pat_[A-Za-z0-9_]+"
+          )
+
+          ISSUES_FOUND=false
+          for pattern in "${PATTERNS[@]}"; do
+            MATCHES=$(grep -r -i -E "$pattern" \
+              --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+              --include="*.json" --include="*.yml" --include="*.yaml" --include="*.env*" \
+              --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git \
+              --exclude="*.md" --exclude="hygiene.yml" --exclude="package-lock.json" . || true)
+            if [ -n "$MATCHES" ]; then
+              echo "⚠️ Potential secret found matching pattern: $pattern"
+              echo "$MATCHES"
+              ISSUES_FOUND=true
+            fi
+          done
+
+          if [ "$ISSUES_FOUND" = true ]; then
+            echo ""
+            echo "⚠️ WARNING: Potential secrets detected. Use environment variables or GitHub Secrets."
+          else
+            echo "✅ No hardcoded credentials detected."
+          fi
+
+  # =============================================================================
+  # TODO/FIXME Markers Check
+  # =============================================================================
+  todo-check:
+    name: TODO/FIXME Detection
+    runs-on: ubuntu-latest
+    needs: [branch-naming]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Check for TODO/FIXME markers
+        run: |
+          echo "🔍 Checking for TODO/FIXME markers..."
+          TODO_COUNT=$(grep -r -i "TODO\|FIXME\|XXX\|HACK" \
+            --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+            --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . | wc -l || echo "0")
+
+          if [ "$TODO_COUNT" -gt 0 ]; then
+            echo "ℹ️ Found $TODO_COUNT TODO/FIXME markers:"
+            grep -r -n -i "TODO\|FIXME\|XXX\|HACK" \
+              --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
+              --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . | head -20 || true
+            echo ""
+            echo "Consider creating issues for these items."
+          else
+            echo "✅ No TODO/FIXME markers found."
+          fi
+
+  # =============================================================================
+  # ESLint
+  # =============================================================================
+  lint:
+    name: ✅ ESLint (MANDATORY)
+    runs-on: ubuntu-latest
+    needs: [conflict-check]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint
+        run: |
+          echo "🔍 Running ESLint on src/..."
+          npm run lint
+          echo "✅ ESLint passed"
+
+  # =============================================================================
+  # Build
+  # =============================================================================
+  build:
+    name: ✅ Dashboard Build (MANDATORY)
+    runs-on: ubuntu-latest
+    needs: [conflict-check]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build React dashboard
+        run: |
+          echo "🔨 Building React dashboard..."
+          npm run build:client
+          echo "✅ Build successful"
+        env:
+          VITE_BASE_PATH: /QE-Automation-ci-cd-report-generator/
+
+  # =============================================================================
+  # Version Bump Check (MANDATORY on PRs to main)
+  # =============================================================================
+  version-bump:
+    name: "\u2705 Version Bump Required (PR\u2192main only)"
+    runs-on: ubuntu-latest
+    needs: [branch-naming]
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version was bumped
+        run: |
+          echo "Checking package.json version bump..."
+          PR_VERSION=$(node -p "require('./package.json').version")
+          git fetch origin main --depth=1
+          BASE_VERSION=$(git show origin/main:package.json | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).version))")
+          echo "Base (main) version : $BASE_VERSION"
+          echo "PR branch version   : $PR_VERSION"
+          if [ "$PR_VERSION" == "$BASE_VERSION" ]; then
+            echo ""
+            echo "\u274c VERSION NOT BUMPED - PR BLOCKED"
+            echo "package.json version must be incremented before merging to main."
+            echo "Current version on both branches: $BASE_VERSION"
+            echo ""
+            echo "Bump the version:"
+            echo "  Patch (bug fix):   x.y.Z  e.g. 2.0.0 -> 2.0.1"
+            echo "  Minor (feature):   x.Y.z  e.g. 2.0.0 -> 2.1.0"
+            echo "  Major (breaking):  X.y.z  e.g. 2.0.0 -> 3.0.0"
+            exit 1
+          fi
+          echo "\u2705 Version bumped: $BASE_VERSION -> $PR_VERSION"
+
+  # =============================================================================
+  # Summary Report
+  # =============================================================================
+  hygiene-summary:
+    name: Hygiene Summary
+    runs-on: ubuntu-latest
+    needs: [branch-naming, conflict-check, file-size-check, secrets-check, todo-check,
+            lint, build, version-bump]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "### 🧹 Hygiene Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch Naming | ${{ needs.branch-naming.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Conflict Detection | ${{ needs.conflict-check.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Large Files | ${{ needs.file-size-check.result == 'success' && '✅ Passed' || '⚠️ Warning' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secrets Scan | ${{ needs.secrets-check.result == 'success' && '✅ Passed' || '⚠️ Warning' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| TODO Markers | ${{ needs.todo-check.result == 'success' && '✅ Passed' || 'ℹ️ Info' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **ESLint (MANDATORY)** | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ FAILED - PR BLOCKED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Dashboard Build (MANDATORY)** | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ FAILED - PR BLOCKED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version Bump (PR to main)** | ${{ needs.version-bump.result == 'success' && '✅ Passed' || needs.version-bump.result == 'skipped' && '⏭️ Skipped' || '❌ FAILED - PR BLOCKED' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Branch:** \`${{ github.head_ref || github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ ESLint Violations Detected!" >> $GITHUB_STEP_SUMMARY
+            echo "**This PR is BLOCKED from merging.**" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`npm run lint\` locally and fix all errors before pushing." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Dashboard Build Failed!" >> $GITHUB_STEP_SUMMARY
+            echo "**This PR is BLOCKED from merging.**" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`npm run build:client\` locally and fix all errors before pushing." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.version-bump.result }}" == "failure" ]; then
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ Version Not Bumped!" >> $GITHUB_STEP_SUMMARY
+            echo "**This PR is BLOCKED from merging.**" >> $GITHUB_STEP_SUMMARY
+            echo "Increment the version in \`package.json\` before merging to main." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi

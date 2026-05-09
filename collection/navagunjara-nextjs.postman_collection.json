@@ -1,0 +1,917 @@
+{
+  "info": {
+    "_postman_id": "nav-nextjs-2024",
+    "name": "Navagunjara (Next.js)",
+    "description": "API collection for the Navagunjara e-commerce Next.js application.\n\nAuthor: Anurag Muthyam\nOrganization: indosyn",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "customerId", "value": "" },
+    { "key": "jewelryId", "value": "" },
+    { "key": "clothingId", "value": "" },
+    { "key": "orderId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Customer created', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('id');",
+                  "  pm.collectionVariables.set('customerId', b.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sharma\",\n  \"email\": \"rahul.sharma@example.com\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Password123!\",\n  \"addressLine1\": \"123 MG Road\",\n  \"city\": \"Bengaluru\",\n  \"state\": \"Karnataka\",\n  \"pincode\": \"560001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token received', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data.token).to.be.a('string').and.not.empty;",
+                  "  pm.collectionVariables.set('token', b.data.token);",
+                  "  pm.collectionVariables.set('customerId', b.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rahul.sharma@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Admin token received', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data.role).to.eql('ADMIN');",
+                  "  pm.collectionVariables.set('token', b.data.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@navagunjara.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Get Current Customer (me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has profile data', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Customer returned', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.not.have.property('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Profile updated', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sharma\",\n  \"phone\": \"9876543211\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Password changed', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"NewPassword456!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me", "password"]
+            }
+          }
+        },
+        {
+          "name": "List Customers (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Paginated list', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('content');",
+                  "  pm.expect(b.data).to.have.property('totalPages');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Jewelry",
+      "item": [
+        {
+          "name": "List Jewelry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Paginated content', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('content');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jewelry?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "jewelry"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Jewelry by Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Filtered results', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('content');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jewelry/search?type=NECKLACE&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "jewelry", "search"],
+              "query": [
+                { "key": "type", "value": "NECKLACE" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Jewelry by Name",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jewelry/search?name=Gold&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "jewelry", "search"],
+              "query": [
+                { "key": "name", "value": "Gold" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Jewelry by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Jewelry returned', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jewelry/{{jewelryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "jewelry", "{{jewelryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Jewelry (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Jewelry created', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.collectionVariables.set('jewelryId', b.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gold Necklace\",\n  \"description\": \"22 carat gold necklace\",\n  \"price\": 45000.00,\n  \"stockQuantity\": 5,\n  \"jewelleryType\": \"NECKLACE\",\n  \"material\": \"Gold\",\n  \"gemstone\": \"Ruby\",\n  \"weightGrams\": 25.5,\n  \"caratValue\": 22.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jewelry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "jewelry"]
+            }
+          }
+        },
+        {
+          "name": "Update Jewelry (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Jewelry updated', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gold Necklace — Updated\",\n  \"price\": 46000.00,\n  \"stockQuantity\": 8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jewelry/{{jewelryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "jewelry", "{{jewelryId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Jewelry (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Jewelry deleted', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jewelry/{{jewelryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "jewelry", "{{jewelryId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clothing",
+      "item": [
+        {
+          "name": "List Clothing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Paginated content', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('content');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clothing?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clothing"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Clothing by Type",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clothing/search?type=SAREE&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clothing", "search"],
+              "query": [
+                { "key": "type", "value": "SAREE" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Clothing by Gender",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clothing/search?gender=FEMALE&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clothing", "search"],
+              "query": [
+                { "key": "gender", "value": "FEMALE" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Clothing by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clothing/{{clothingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clothing", "{{clothingId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Clothing (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Clothing created', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.collectionVariables.set('clothingId', b.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kanchipuram Silk Saree\",\n  \"description\": \"Traditional Kanchipuram silk saree\",\n  \"price\": 12000.00,\n  \"stockQuantity\": 15,\n  \"clothingType\": \"SAREE\",\n  \"size\": \"FREE_SIZE\",\n  \"color\": \"Red\",\n  \"fabric\": \"Silk\",\n  \"gender\": \"FEMALE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clothing",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clothing"]
+            }
+          }
+        },
+        {
+          "name": "Update Clothing (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kanchipuram Silk Saree — Updated\",\n  \"price\": 13000.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clothing/{{clothingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clothing", "{{clothingId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Clothing (Admin)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/clothing/{{clothingId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "clothing", "{{clothingId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Place Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Order placed', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.collectionVariables.set('orderId', b.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"deliveryAddress\": \"123 MG Road\",\n  \"deliveryCity\": \"Bengaluru\",\n  \"deliveryState\": \"Karnataka\",\n  \"deliveryPincode\": \"560001\",\n  \"items\": [\n    { \"productId\": \"{{jewelryId}}\", \"quantity\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Paginated orders', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('content');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Order returned', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders", "{{orderId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Order cancelled', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "orders", "{{orderId}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "List All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/orders?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "orders"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Order Status (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/orders/{{orderId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "orders", "{{orderId}}", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has stats', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.have.property('totalOrders');",
+                  "  pm.expect(b.data).to.have.property('totalRevenue');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Recent Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has orders array', () => {",
+                  "  const b = pm.response.json();",
+                  "  pm.expect(b.success).to.be.true;",
+                  "  pm.expect(b.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/orders/recent?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "orders", "recent"],
+              "query": [{ "key": "limit", "value": "5" }]
+            }
+          }
+        },
+        {
+          "name": "List Customers (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments (Phase 2 — 501)",
+      "description": "Payment endpoints return 501 Not Implemented. Razorpay integration coming in Phase 2.",
+      "item": [
+        {
+          "name": "Create Payment Intent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 501', () => pm.response.to.have.status(501));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"amount\": 45000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/create-intent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "create-intent"]
+            }
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 501', () => pm.response.to.have.status(501));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpayPaymentId\": \"pay_test_123\",\n  \"razorpayOrderId\": \"order_test_123\",\n  \"razorpaySignature\": \"sig_test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/payments/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "payments", "verify"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
