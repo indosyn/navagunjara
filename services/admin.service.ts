@@ -21,9 +21,6 @@ export const adminService = {
    *
    * @returns Object containing total orders, pending orders, revenue,
    *          product / customer counts, and up to 10 low-stock products.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async getDashboardStats() {
     log.info("getDashboardStats: fetching admin dashboard metrics");
@@ -78,9 +75,6 @@ export const adminService = {
    *
    * @param limit - Maximum number of orders to return (default 5).
    * @returns Array of recent orders with customer and item data.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async getRecentOrders(limit = 5) {
     log.debug({ limit }, "getRecentOrders: fetching recent orders");

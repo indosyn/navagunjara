@@ -13,6 +13,8 @@ import { auth } from "@/lib/auth";
 import { updateOrderStatusSchema } from "@/lib/validations";
 import { orderService } from "@/services/order.service";
 import { createLogger } from "@/lib/logger";
+import { sendShippingNotification, sendDeliveryConfirmation } from "@/lib/email";
+import { db } from "@/lib/db";
 
 const log = createLogger("api.orders.status");
 
@@ -39,6 +41,20 @@ export async function PUT(
     }
     log.info({ id, status: parsed.data.status }, "Updating order status");
     const order = await orderService.updateStatus(id, parsed.data.status);
+
+    // Send email notifications for status changes (fire and forget)
+    const dbOrder = await db.order.findUnique({
+      where: { id: BigInt(id) },
+      include: { customer: true },
+    });
+    if (dbOrder) {
+      if (parsed.data.status === "SHIPPED") {
+        sendShippingNotification(dbOrder.customer.email, id);
+      } else if (parsed.data.status === "DELIVERED") {
+        sendDeliveryConfirmation(dbOrder.customer.email, id);
+      }
+    }
+
     return NextResponse.json({ success: true, message: "Order status updated", data: order });
   } catch (e) {
     if (e instanceof Error && e.message === "NOT_FOUND") {

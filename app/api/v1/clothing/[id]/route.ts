@@ -17,7 +17,6 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api.clothing.[id]");
 
-/** @author Anurag Muthyam */
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -33,7 +32,6 @@ export async function GET(
   }
 }
 
-/** @author Anurag Muthyam */
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -66,7 +64,6 @@ export async function PUT(
   }
 }
 
-/** @author Anurag Muthyam */
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

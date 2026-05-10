@@ -16,14 +16,17 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     const qs = statusFilter ? `&status=${statusFilter}` : "";
     fetch(`/api/v1/orders?page=${page}&size=20${qs}`)
       .then((r) => r.json())
       .then((json) => {
-        setData(json.data ?? { content: [], totalPages: 0 });
-        setLoading(false);
+        if (!cancelled) {
+          setData(json.data ?? { content: [], totalPages: 0 });
+          setLoading(false);
+        }
       });
+    return () => { cancelled = true; };
   }, [page, statusFilter]);
 
   const statuses = ["", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
@@ -37,6 +40,7 @@ export default function AdminOrdersPage() {
           <button
             key={s}
             onClick={() => {
+              setLoading(true);
               setStatusFilter(s);
               setPage(0);
             }}

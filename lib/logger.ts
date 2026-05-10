@@ -32,9 +32,6 @@ const isProd = process.env.NODE_ENV === "production";
  * @remarks
  * `pino-pretty` is loaded only in dev via the `transport` option so the
  * production bundle never pays for its weight.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 const baseConfig: pino.LoggerOptions = {
   level: process.env.LOG_LEVEL ?? (isProd ? "info" : "debug"),
@@ -71,9 +68,6 @@ const rootLogger = pino(baseConfig);
  * log.info({ email: "u@example.com" }, "Customer registered");
  * log.error({ err }, "Registration failed");
  * ```
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export function createLogger(module: string): pino.Logger {
   return rootLogger.child({ module });
@@ -82,9 +76,6 @@ export function createLogger(module: string): pino.Logger {
 /**
  * Root application logger — use for one-off or cross-cutting log statements
  * that don't belong to a specific module.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export const logger = createLogger("navagunjara");
 
@@ -102,9 +93,6 @@ export const logger = createLogger("navagunjara");
  * const log = clientLogger("ProductCard");
  * log.info("Added to cart", { productId: "42" });
  * ```
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export function clientLogger(module: string) {
   const prefix = `[${module}]`;

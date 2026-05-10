@@ -125,3 +125,33 @@ export const updateOrderStatusSchema = z.object({
 });
 
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>;
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+export const createReviewSchema = z.object({
+  productId: z.number().int().positive("Product ID is required"),
+  rating: z.number().int().min(1, "Rating must be 1–5").max(5, "Rating must be 1–5"),
+  title: z.string().max(255).optional(),
+  comment: z.string().max(2000).optional(),
+});
+
+export type CreateReviewInput = z.infer<typeof createReviewSchema>;
+
+export const updateReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5).optional(),
+  title: z.string().max(255).optional(),
+  comment: z.string().max(2000).optional(),
+});
+
+export type UpdateReviewInput = z.infer<typeof updateReviewSchema>;
+
+// ─── Razorpay ─────────────────────────────────────────────────────────────────
+
+export const razorpayVerifySchema = z.object({
+  razorpay_order_id: z.string().min(1),
+  razorpay_payment_id: z.string().min(1),
+  razorpay_signature: z.string().min(1),
+  orderId: z.number().int().positive(),
+});
+
+export type RazorpayVerifyInput = z.infer<typeof razorpayVerifySchema>;

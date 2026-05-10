@@ -16,7 +16,6 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api.clothing");
 
-/** @author Anurag Muthyam */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const page = Math.max(0, Number(searchParams.get("page") ?? 0));
@@ -30,7 +29,6 @@ export async function GET(req: NextRequest) {
   );
 }
 
-/** @author Anurag Muthyam */
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {

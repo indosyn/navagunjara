@@ -63,6 +63,9 @@ navagunjara-backend/
 .next/
 out/
 
+### ─── TypeDoc ─── ###
+docs/
+
 ### ─── Node / npm ─── ###
 node_modules/
 npm-debug.log*
