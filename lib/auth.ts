@@ -2,6 +2,9 @@
  * Auth.js (NextAuth v5) configuration — credentials provider with
  * JWT strategy. Checks admin table then customer table.
  *
+ * This is the full auth config with DB access — NOT safe for Edge Runtime.
+ * For middleware, use lib/auth.config.ts instead.
+ *
  * @module lib/auth
  * @author Anurag Muthyam
  * @organization indosyn
@@ -12,35 +15,10 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import type { UserRole } from "@/types";
-
-declare module "next-auth" {
-  interface User {
-    id: string;
-    role: UserRole;
-    firstName: string;
-    lastName: string;
-  }
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      role: UserRole;
-      firstName: string;
-      lastName: string;
-    };
-  }
-}
-
-declare module "@auth/core/jwt" {
-  interface JWT {
-    id: string;
-    role: UserRole;
-    firstName: string;
-    lastName: string;
-  }
-}
+import { authConfig } from "@/lib/auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -85,29 +63,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.firstName = user.firstName;
-        token.lastName = user.lastName;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.role = token.role as UserRole;
-      session.user.firstName = token.firstName as string;
-      session.user.lastName = token.lastName as string;
-      return session;
-    },
-  },
-  pages: {
-    signIn: "/login",
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
 });

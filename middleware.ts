@@ -1,37 +1,19 @@
 /**
  * Edge middleware — auth guards for `/admin/*` and `/account/*` routes.
  *
+ * Uses the Edge-safe auth config (no Prisma/DB imports).
+ *
  * @module middleware
  * @author Anurag Muthyam
  * @organization indosyn
  */
 
-import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth.config";
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-  const session = req.auth;
+const { auth } = NextAuth(authConfig);
 
-  // Protect admin routes — must be authenticated with ADMIN role
-  if (pathname.startsWith("/admin")) {
-    if (!session) {
-      return NextResponse.redirect(new URL("/login?callbackUrl=/admin", req.url));
-    }
-    if (session.user.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-  }
-
-  // Protect account routes — must be authenticated
-  if (pathname.startsWith("/account")) {
-    if (!session) {
-      return NextResponse.redirect(
-        new URL(`/login?callbackUrl=${pathname}`, req.url)
-      );
-    }
-  }
-});
+export default auth;
 
 export const config = {
   matcher: ["/admin/:path*", "/account/:path*"],
