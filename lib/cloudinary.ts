@@ -21,9 +21,6 @@ cloudinary.config({
  * @param buffer - File buffer from multipart form data.
  * @param folder - Cloudinary folder path (e.g. `"products/jewelry"`).
  * @returns Upload result with `secure_url` and `public_id`.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function uploadImage(
   buffer: Buffer,
@@ -52,9 +49,6 @@ export async function uploadImage(
  * Delete an image from Cloudinary by its public ID.
  *
  * @param publicId - Cloudinary public ID.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function deleteImage(publicId: string): Promise<void> {
   await cloudinary.uploader.destroy(publicId);

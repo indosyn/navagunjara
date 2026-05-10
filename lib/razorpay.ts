@@ -27,9 +27,6 @@ if (process.env.NODE_ENV !== "production") globalForRazorpay.razorpay = razorpay
  * @param paymentId - Razorpay payment ID.
  * @param signature - Razorpay signature from client callback.
  * @returns `true` if the signature is valid.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export function verifySignature(
   orderId: string,

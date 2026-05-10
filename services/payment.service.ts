@@ -22,9 +22,6 @@ export const paymentService = {
    * @param method  - Payment method (UPI, CARD, etc.).
    * @returns The Razorpay order object and internal payment record.
    * @throws `ORDER_NOT_FOUND` | `ORDER_NOT_PENDING` | `PAYMENT_EXISTS`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async createOrder(orderId: string, method: string) {
     log.info({ orderId, method }, "createOrder: initiating payment");
@@ -89,9 +86,6 @@ export const paymentService = {
    * @param data - Razorpay callback payload with order_id, payment_id, signature.
    * @returns Updated payment record.
    * @throws `INVALID_SIGNATURE` | `PAYMENT_NOT_FOUND`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async verify(data: {
     razorpay_order_id: string;
@@ -145,9 +139,6 @@ export const paymentService = {
    *
    * @param orderId - Internal order ID.
    * @returns Array of payment records.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async findByOrderId(orderId: string) {
     log.debug({ orderId }, "findByOrderId: looking up payments");
@@ -164,9 +155,6 @@ export const paymentService = {
    * @param paymentId     - Internal payment ID.
    * @param failureReason - Reason for failure.
    * @returns Updated payment record.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async markFailed(paymentId: string, failureReason: string) {
     log.info({ paymentId, failureReason }, "markFailed: marking payment as failed");

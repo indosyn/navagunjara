@@ -20,9 +20,6 @@ export const imageService = {
    * @param productId - Product ID.
    * @param files     - Array of `{ buffer, filename }`.
    * @returns Array of created ProductImage records.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async upload(
     productId: string,
@@ -75,9 +72,6 @@ export const imageService = {
    *
    * @param productId - Product ID.
    * @returns Array of ProductImage records.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async listByProduct(productId: string) {
     const images = await db.productImage.findMany({
@@ -92,9 +86,6 @@ export const imageService = {
    *
    * @param imageId - ProductImage ID.
    * @throws `NOT_FOUND`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async remove(imageId: string) {
     log.info({ imageId }, "remove: deleting image");

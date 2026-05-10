@@ -21,9 +21,6 @@ const FROM = process.env.RESEND_FROM_EMAIL ?? "orders@navagunjara.com";
  * @param orderId   - Order ID.
  * @param total     - Order total formatted as string.
  * @param itemCount - Number of items in the order.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function sendOrderConfirmation(
   to: string,
@@ -62,9 +59,6 @@ export async function sendOrderConfirmation(
  *
  * @param to      - Customer email address.
  * @param orderId - Order ID.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function sendShippingNotification(
   to: string,
@@ -96,9 +90,6 @@ export async function sendShippingNotification(
  *
  * @param to      - Customer email address.
  * @param orderId - Order ID.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function sendDeliveryConfirmation(
   to: string,

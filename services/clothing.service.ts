@@ -39,9 +39,6 @@ export const clothingService = {
    * @param page - Zero-based page index.
    * @param size - Items per page.
    * @returns Paginated clothing result set.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async list(page: number, size: number) {
     log.debug({ page, size }, "list: fetching clothing page");
@@ -76,9 +73,6 @@ export const clothingService = {
    * @param page    - Zero-based page index.
    * @param size    - Items per page.
    * @returns Filtered, paginated clothing result set.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async search(
     filters: { type?: string; gender?: string; name?: string },
@@ -123,9 +117,6 @@ export const clothingService = {
    * @param id - Product ID (BigInt as string).
    * @returns Serialized clothing product with details.
    * @throws `NOT_FOUND` when no active clothing matches the ID.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async findById(id: string) {
     log.debug({ id }, "findById: looking up clothing");
@@ -148,9 +139,6 @@ export const clothingService = {
    *
    * @param data - Validated clothing creation payload.
    * @returns The newly created product with clothing details.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async create(data: CreateClothingInput) {
     log.info({ name: data.name, type: data.clothingType }, "create: creating clothing product");
@@ -191,9 +179,6 @@ export const clothingService = {
    * @param data - Partial update payload.
    * @returns The updated product with clothing details.
    * @throws `NOT_FOUND` if the product does not exist.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async update(id: string, data: UpdateClothingInput) {
     log.info({ id }, "update: updating clothing");
@@ -235,9 +220,6 @@ export const clothingService = {
    *
    * @param id - Product ID.
    * @throws `NOT_FOUND` if the product does not exist.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async delete(id: string) {
     log.info({ id }, "delete: soft-deleting clothing");

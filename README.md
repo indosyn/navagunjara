@@ -21,6 +21,7 @@ Full-stack e-commerce platform for **Indian jewelry & clothing** — **Next.js 1
 | 🌱 Database Seed | [prisma/seed.ts](prisma/seed.ts) |
 | 🔐 Auth Config | [lib/auth.ts](lib/auth.ts) |
 | 🎨 UI Components | [components/](components/) |
+| 📖 API Docs (TypeDoc) | Run `npm run docs:open` → `docs/index.html` |
 | ✅ Unit Tests | [\_\_tests\_\_/](__tests__/) |
 
 ## Tech Stack
@@ -190,6 +191,8 @@ npm start
 | `npm run test:watch` | Jest in watch mode |
 | `npm run test:coverage` | Jest with coverage report |
 | `npm run typecheck` | TypeScript strict check |
+| `npm run docs` | Generate TypeDoc API documentation |
+| `npm run docs:open` | Generate & open docs in browser |
 | `npm run db:generate` | Regenerate Prisma client |
 | `npm run db:push` | Push schema to database |
 | `npm run db:seed` | Seed database |
@@ -232,6 +235,20 @@ npm run test:coverage # With coverage report
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret |
 | `RESEND_API_KEY` | Resend email API key |
 | `RESEND_FROM_EMAIL` | Sender email address |
+
+## API Documentation (TypeDoc)
+
+TypeDoc generates browsable API documentation from the JSDoc comments in the codebase.
+
+```bash
+# Generate docs to ./docs/
+npm run docs
+
+# Generate & open in browser
+npm run docs:open
+```
+
+The generated docs cover all modules under `lib/`, `services/`, `types/`, `hooks/`, and `app/api/`. Open `docs/index.html` in any browser to browse.
 
 ## CI/CD Workflows
 

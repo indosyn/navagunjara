@@ -39,9 +39,6 @@ export const jewelryService = {
    * @param page - Zero-based page index.
    * @param size - Number of items per page.
    * @returns Paginated jewelry result set.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async list(page: number, size: number) {
     log.debug({ page, size }, "list: fetching jewelry page");
@@ -76,9 +73,6 @@ export const jewelryService = {
    * @param page    - Zero-based page index.
    * @param size    - Items per page.
    * @returns Filtered, paginated jewelry result set.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async search(
     filters: { type?: string; name?: string },
@@ -120,9 +114,6 @@ export const jewelryService = {
    * @param id - Product ID (BigInt as string).
    * @returns Serialized jewelry product with details.
    * @throws `NOT_FOUND` when no active jewelry matches the ID.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async findById(id: string) {
     log.debug({ id }, "findById: looking up jewelry");
@@ -145,9 +136,6 @@ export const jewelryService = {
    *
    * @param data - Validated jewelry creation payload.
    * @returns The newly created product with jewelry details.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async create(data: CreateJewelryInput) {
     log.info({ name: data.name, type: data.jewelleryType }, "create: creating jewelry product");
@@ -188,9 +176,6 @@ export const jewelryService = {
    * @param data - Partial update payload.
    * @returns The updated product with jewelry details.
    * @throws `NOT_FOUND` if the product does not exist.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async update(id: string, data: UpdateJewelryInput) {
     log.info({ id }, "update: updating jewelry");
@@ -232,9 +217,6 @@ export const jewelryService = {
    *
    * @param id - Product ID.
    * @throws `NOT_FOUND` if the product does not exist.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async delete(id: string) {
     log.info({ id }, "delete: soft-deleting jewelry");

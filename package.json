@@ -15,7 +15,9 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "docs": "typedoc",
+    "docs:open": "typedoc && start docs/index.html"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -61,6 +63,7 @@
     "tailwindcss": "^4",
     "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
+    "typedoc": "^0.28.19",
     "typescript": "^5"
   }
 }

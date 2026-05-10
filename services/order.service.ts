@@ -26,9 +26,6 @@ export const orderService = {
    * @returns The created order with items, product names, and customer info.
    * @throws `PRODUCT_NOT_FOUND` if any item references an inactive or missing product.
    * @throws `INSUFFICIENT_STOCK:<productId>` if stock is too low for any item.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async place(data: CreateOrderInput) {
     log.info({ customerId: data.customerId, itemCount: data.items.length }, "place: starting order placement");
@@ -114,9 +111,6 @@ export const orderService = {
    * @param page       - Zero-based page index.
    * @param size       - Items per page.
    * @returns Paginated order list.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async listByCustomer(customerId: string, page: number, size: number) {
     log.debug({ customerId, page, size }, "listByCustomer: fetching orders");
@@ -148,9 +142,6 @@ export const orderService = {
    * @param size   - Items per page.
    * @param status - Optional order status filter.
    * @returns Paginated order list.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async listAll(page: number, size: number, status?: string) {
     log.debug({ page, size, status }, "listAll: fetching all orders");
@@ -181,9 +172,6 @@ export const orderService = {
    * @param id - Order ID.
    * @returns Serialized order with items and customer info.
    * @throws `NOT_FOUND` if the order does not exist.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async findById(id: string) {
     log.debug({ id }, "findById: looking up order");
@@ -206,9 +194,6 @@ export const orderService = {
    * @param requestingCustomerId - ID of the customer requesting cancellation.
    * @returns The cancelled order.
    * @throws `NOT_FOUND` / `FORBIDDEN` / `CANNOT_CANCEL`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async cancel(id: string, requestingCustomerId: string) {
     log.info({ id, requestingCustomerId }, "cancel: cancellation requested");
@@ -244,9 +229,6 @@ export const orderService = {
    * @param status - New status value.
    * @returns The updated order.
    * @throws `NOT_FOUND` if the order does not exist.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async updateStatus(id: string, status: string) {
     log.info({ id, status }, "updateStatus: changing order status");

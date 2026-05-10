@@ -29,9 +29,6 @@ export const customerService = {
    * @param data - Validated registration payload.
    * @returns The newly created customer (without password).
    * @throws `DUPLICATE_EMAIL` if the email is already taken.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async register(data: RegisterCustomerInput) {
     log.info({ email: data.email }, "register: attempting registration");
@@ -73,9 +70,6 @@ export const customerService = {
    * @param id - Customer ID (BigInt as string).
    * @returns The customer record (without password).
    * @throws `NOT_FOUND` if no customer matches the ID.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async findById(id: string) {
     log.debug({ id }, "findById: looking up customer");
@@ -97,9 +91,6 @@ export const customerService = {
    *
    * @param email - Customer's email.
    * @returns The raw Prisma customer or `null`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async findByEmail(email: string) {
     log.debug({ email }, "findByEmail: looking up customer");
@@ -112,9 +103,6 @@ export const customerService = {
    * @param id   - Customer ID.
    * @param data - Partial profile update payload.
    * @returns The updated customer (without password).
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async update(id: string, data: UpdateCustomerInput) {
     log.info({ id }, "update: updating customer profile");
@@ -135,9 +123,6 @@ export const customerService = {
    * @param data - Contains `currentPassword` and `newPassword`.
    * @throws `NOT_FOUND` if customer does not exist.
    * @throws `INVALID_CURRENT_PASSWORD` if the current password is wrong.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async changePassword(id: string, data: ChangePasswordInput) {
     log.info({ id }, "changePassword: password change requested");
@@ -171,9 +156,6 @@ export const customerService = {
    * @param page - Zero-based page index.
    * @param size - Items per page.
    * @returns Paginated list of customers (without passwords).
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async list(page: number, size: number) {
     log.debug({ page, size }, "list: fetching customer page");

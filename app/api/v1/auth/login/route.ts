@@ -35,9 +35,6 @@ const LOGIN_WINDOW_MS = 60_000;
  *
  * @param req - Incoming request with JSON body.
  * @returns JSON response with JWT token or error.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function POST(req: NextRequest) {
   try {

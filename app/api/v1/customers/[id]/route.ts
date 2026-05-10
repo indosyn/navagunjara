@@ -38,9 +38,6 @@ export async function GET(
 
 /**
  * Update a customer profile.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function PUT(
   req: NextRequest,

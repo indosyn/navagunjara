@@ -21,9 +21,6 @@ export const reviewService = {
    * @param data       - Review payload (productId, rating, title, comment).
    * @returns Created review.
    * @throws `ALREADY_REVIEWED` if customer already reviewed this product.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async create(customerId: string, data: CreateReviewInput) {
     log.info({ customerId, productId: data.productId }, "create: submitting review");
@@ -64,9 +61,6 @@ export const reviewService = {
    * @param data       - Fields to update.
    * @returns Updated review.
    * @throws `NOT_FOUND` | `FORBIDDEN`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async update(reviewId: string, customerId: string, data: UpdateReviewInput) {
     log.info({ reviewId, customerId }, "update: updating review");
@@ -95,9 +89,6 @@ export const reviewService = {
    * @param reviewId   - Review ID.
    * @param customerId - Customer ID (author) or null for admin.
    * @param isAdmin    - Whether the requester is an admin.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async remove(reviewId: string, customerId: string | null, isAdmin: boolean) {
     log.info({ reviewId, customerId, isAdmin }, "remove: deleting review");
@@ -117,9 +108,6 @@ export const reviewService = {
    * @param page      - Zero-based page index.
    * @param size      - Items per page.
    * @returns Paginated review list with summary.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async listByProduct(productId: string, page: number, size: number) {
     log.debug({ productId, page, size }, "listByProduct: fetching reviews");

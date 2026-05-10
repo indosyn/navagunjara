@@ -27,9 +27,6 @@ const REGISTER_WINDOW_MS = 60_000;
  *
  * @param req - Incoming request with registration JSON body.
  * @returns 201 with customer profile on success.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function POST(req: NextRequest) {
   try {
@@ -80,9 +77,6 @@ export async function POST(req: NextRequest) {
  *
  * @param req - Incoming request with `page` and `size` query params.
  * @returns Paginated customer list.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export async function GET(req: NextRequest) {
   const session = await auth();

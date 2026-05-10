@@ -20,9 +20,6 @@ export const wishlistService = {
    * @param productId  - Product ID to add.
    * @returns The wishlist item.
    * @throws `ALREADY_IN_WISHLIST` | `PRODUCT_NOT_FOUND`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async add(customerId: string, productId: string) {
     log.info({ customerId, productId }, "add: adding to wishlist");
@@ -60,9 +57,6 @@ export const wishlistService = {
    * @param customerId - Customer ID.
    * @param productId  - Product ID to remove.
    * @throws `NOT_FOUND`.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async remove(customerId: string, productId: string) {
     log.info({ customerId, productId }, "remove: removing from wishlist");
@@ -86,9 +80,6 @@ export const wishlistService = {
    *
    * @param customerId - Customer ID.
    * @returns Array of wishlist items with product details.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async list(customerId: string) {
     log.debug({ customerId }, "list: fetching wishlist");
@@ -108,9 +99,6 @@ export const wishlistService = {
    * @param customerId - Customer ID.
    * @param productId  - Product ID.
    * @returns `true` if the product is wishlisted.
-   *
-   * @author Anurag Muthyam
-   * @organization indosyn
    */
   async isWishlisted(customerId: string, productId: string): Promise<boolean> {
     const item = await db.wishlistItem.findUnique({

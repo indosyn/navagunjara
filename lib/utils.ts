@@ -16,9 +16,6 @@ import type { ApiResponse } from "@/types";
  * @param message - Human-readable message (default `"Success"`).
  * @param status - HTTP status code (default `200`).
  * @returns Object with `body` and `status` ready for `NextResponse.json()`.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export function apiSuccess<T>(
   data: T,
@@ -30,9 +27,6 @@ export function apiSuccess<T>(
 
 /**
  * Build an error API response envelope.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export function apiError(
   message: string,
@@ -48,9 +42,6 @@ export function apiError(
 
 /**
  * Recursively convert BigInt / Prisma Decimal values to JSON-safe strings.
- *
- * @author Anurag Muthyam
- * @organization indosyn
  */
 export function serializeDecimal(value: unknown): unknown {
   if (value === null || value === undefined) return value;
@@ -73,7 +64,7 @@ export function serializeDecimal(value: unknown): unknown {
   return value;
 }
 
-/** Format a number as Indian Rupees (INR). @author Anurag Muthyam */
+/** Format a number as Indian Rupees (INR). */
 export function formatINR(amount: number | string): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -82,12 +73,12 @@ export function formatINR(amount: number | string): string {
   }).format(Number(amount));
 }
 
-/** Capitalize first letter of a string. @author Anurag Muthyam */
+/** Capitalize first letter of a string. */
 export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-/** Convert `SNAKE_CASE` to `Title Case` for display. @author Anurag Muthyam */
+/** Convert `SNAKE_CASE` to `Title Case` for display. */
 export function toTitleCase(str: string): string {
   return str
     .split("_")
@@ -95,7 +86,7 @@ export function toTitleCase(str: string): string {
     .join(" ");
 }
 
-/** Response-type helper for API route handlers. @author Anurag Muthyam */
+/** Response-type helper for API route handlers. */
 export type ApiHandler = (
   ...args: Parameters<typeof NextResponse.json>
 ) => ReturnType<typeof NextResponse.json>;
