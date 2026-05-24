@@ -31,7 +31,7 @@ const REGISTER_WINDOW_MS = 60_000;
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const { allowed, resetMs } = rateLimit(`register:${ip}`, REGISTER_RATE_LIMIT, REGISTER_WINDOW_MS);
+    const { allowed, resetMs } = await rateLimit(`register:${ip}`, REGISTER_RATE_LIMIT, REGISTER_WINDOW_MS);
     if (!allowed) {
       log.warn({ ip }, "Registration rate limit exceeded");
       return NextResponse.json(

@@ -28,6 +28,13 @@ import { verifyWebhookSignature } from "@/lib/razorpay";
 import { db } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 
+// Razorpay SDK uses the `crypto` and `Buffer` Node.js built-ins — pin this
+// route to the Node.js runtime (NOT Edge) on Vercel.
+export const runtime = "nodejs";
+// The DB transaction can take a few seconds on cold start. Bump above the
+// default 10s Vercel Hobby ceiling so we don't 504 mid-write.
+export const maxDuration = 30;
+
 const log = createLogger("api.payments.webhook");
 
 // Minimal shape of the Razorpay webhook payload we care about. The real

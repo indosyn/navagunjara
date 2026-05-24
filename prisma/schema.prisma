@@ -8,6 +8,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // NOTE: Prisma 7 — connection URLs are defined in `prisma.config.ts`
+  // (datasource.url and migrate.shadowDatabaseUrl/direct). Schema cannot
+  // declare `url` / `directUrl` anymore.
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────────

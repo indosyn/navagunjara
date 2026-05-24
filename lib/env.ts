@@ -66,11 +66,21 @@ const schema = z.object({
   DATABASE_URL: z
     .string()
     .min(1, "DATABASE_URL is required"),
+  // Direct (unpooled) connection for `prisma migrate`. Optional — only the
+  // Prisma CLI reads this; the runtime client uses DATABASE_URL. In dev you
+  // can leave this unset and Prisma falls back to DATABASE_URL.
+  DIRECT_URL: z.string().url().optional(),
 
   // Auth — production secret must be at least 32 random bytes (base64).
   // Generate with: `openssl rand -base64 32`.
   NEXTAUTH_SECRET: prodRequired("dev-secret-do-not-use-in-prod-min-32-chars!", 32),
   NEXTAUTH_URL: z.string().url().optional(),
+  // Required on serverless platforms (Vercel) where the host header is set
+  // by the proxy. Without this, NextAuth refuses to trust the incoming host.
+  AUTH_TRUST_HOST: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
 
   // Rate-limit backend (multi-instance safe). When BOTH are present, the
   // limiter uses Upstash REST; otherwise it falls back to in-memory.
