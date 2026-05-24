@@ -24,14 +24,15 @@ export function makeRequest(path: string, opts: RouteRequestOptions = {}): NextR
   for (const [k, v] of Object.entries(opts.searchParams ?? {})) {
     url.searchParams.set(k, v);
   }
-  const init: RequestInit = {
+  const init: Record<string, unknown> = {
     method: opts.method ?? "GET",
     headers: { "content-type": "application/json", ...(opts.headers ?? {}) },
   };
   if (opts.body !== undefined) {
     init.body = typeof opts.body === "string" ? opts.body : JSON.stringify(opts.body);
   }
-  return new NextRequest(url, init);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new NextRequest(url, init as any);
 }
 
 /** Wrap a value in the route-handler params Promise shape. */

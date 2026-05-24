@@ -82,6 +82,7 @@ const mockDb = {
     findUnique: jest.fn(),
     upsert: jest.fn(),
     create: jest.fn(),
+    delete: jest.fn(),
     deleteMany: jest.fn(),
   },
   $transaction: jest.fn(),

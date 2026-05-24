@@ -10,6 +10,7 @@ describe("env (dev defaults)", () => {
   it("populates dev defaults for missing required-in-prod fields", async () => {
     jest.resetModules();
     const original = { ...process.env };
+    // @ts-expect-error - NODE_ENV is read-only but we need to mock it
     process.env.NODE_ENV = "test";
     process.env.DATABASE_URL = "postgresql://test";
     delete process.env.NEXTAUTH_SECRET;
@@ -29,6 +30,7 @@ describe("env (dev defaults)", () => {
   it("respects explicit env values when provided", async () => {
     jest.resetModules();
     const original = { ...process.env };
+    // @ts-expect-error - NODE_ENV is read-only but we need to mock it
     process.env.NODE_ENV = "test";
     process.env.DATABASE_URL = "postgresql://test";
     process.env.NEXTAUTH_SECRET = "real-secret";
@@ -46,6 +48,7 @@ describe("env (dev defaults)", () => {
   it("applies default for RESEND_FROM_EMAIL", async () => {
     jest.resetModules();
     const original = { ...process.env };
+    // @ts-expect-error - NODE_ENV is read-only but we need to mock it
     process.env.NODE_ENV = "test";
     process.env.DATABASE_URL = "postgresql://test";
     delete process.env.RESEND_FROM_EMAIL;
@@ -57,6 +60,7 @@ describe("env (dev defaults)", () => {
   it("applies default for NEXT_PUBLIC_APP_URL", async () => {
     jest.resetModules();
     const original = { ...process.env };
+    // @ts-expect-error - NODE_ENV is read-only but we need to mock it
     process.env.NODE_ENV = "test";
     process.env.DATABASE_URL = "postgresql://test";
     delete process.env.NEXT_PUBLIC_APP_URL;

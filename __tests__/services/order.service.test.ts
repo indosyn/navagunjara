@@ -73,12 +73,12 @@ describe("orderService.place", () => {
     });
 
     const result = await orderService.place({
-      customerId: "100",
+      customerId: 100,
       deliveryAddress: "123 MG Road",
       deliveryCity: "Bangalore",
       deliveryState: "Karnataka",
       deliveryPincode: "560001",
-      items: [{ productId: "10", quantity: 2 }],
+      items: [{ productId: 10, quantity: 2 }],
     });
 
     expect(result).toBeDefined();
@@ -90,12 +90,12 @@ describe("orderService.place", () => {
 
     await expect(
       orderService.place({
-        customerId: "100",
+        customerId: 100,
         deliveryAddress: "123 MG Road",
         deliveryCity: "Bangalore",
         deliveryState: "Karnataka",
         deliveryPincode: "560001",
-        items: [{ productId: "999", quantity: 1 }],
+        items: [{ productId: 999, quantity: 1 }],
       })
     ).rejects.toThrow("PRODUCT_NOT_FOUND");
   });
@@ -106,12 +106,12 @@ describe("orderService.place", () => {
 
     await expect(
       orderService.place({
-        customerId: "100",
+        customerId: 100,
         deliveryAddress: "123 MG Road",
         deliveryCity: "Bangalore",
         deliveryState: "Karnataka",
         deliveryPincode: "560001",
-        items: [{ productId: "10", quantity: 5 }],
+        items: [{ productId: 10, quantity: 5 }],
       })
     ).rejects.toThrow("INSUFFICIENT_STOCK:10");
   });
