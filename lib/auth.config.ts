@@ -12,6 +12,20 @@
 import type { NextAuthConfig } from "next-auth";
 import type { UserRole } from "@/types";
 
+// Cookies are set explicitly so we don't drift on NextAuth defaults across
+// minor upgrades and so we get `__Secure-` / `__Host-` prefixes in prod
+// (browsers refuse to set these unless the cookie is also Secure on HTTPS).
+const isProd = process.env.NODE_ENV === "production";
+const sessionCookieName = isProd
+  ? "__Secure-authjs.session-token"
+  : "authjs.session-token";
+const callbackCookieName = isProd
+  ? "__Secure-authjs.callback-url"
+  : "authjs.callback-url";
+const csrfCookieName = isProd
+  ? "__Host-authjs.csrf-token"
+  : "authjs.csrf-token";
+
 declare module "next-auth" {
   interface User {
     id: string;
@@ -86,5 +100,38 @@ export const authConfig = {
   session: {
     strategy: "jwt",
     maxAge: 24 * 60 * 60, // 24 hours
+  },
+  // Force HTTPS-only cookies in production. Auth.js auto-detects via NEXTAUTH_URL
+  // scheme, but setting this explicitly avoids surprises behind reverse proxies.
+  useSecureCookies: isProd,
+  cookies: {
+    sessionToken: {
+      name: sessionCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProd,
+      },
+    },
+    callbackUrl: {
+      name: callbackCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProd,
+      },
+    },
+    csrfToken: {
+      // __Host- prefix requires: Secure + Path=/ + no Domain attribute.
+      name: csrfCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProd,
+      },
+    },
   },
 } satisfies NextAuthConfig;

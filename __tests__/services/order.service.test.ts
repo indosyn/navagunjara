@@ -65,7 +65,10 @@ describe("orderService.place", () => {
     (mockDb.$transaction as jest.Mock).mockImplementation(async (fn) => {
       return fn({
         order: { create: jest.fn().mockResolvedValue(MOCK_ORDER) },
-        product: { update: jest.fn().mockResolvedValue(MOCK_PRODUCT) },
+        product: {
+          update: jest.fn().mockResolvedValue(MOCK_PRODUCT),
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
       });
     });
 

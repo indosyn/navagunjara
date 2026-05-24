@@ -8,16 +8,16 @@
  * @organization indosyn
  */
 
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getApiSession } from "@/lib/api-auth";
 import { adminService } from "@/services/admin.service";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api.admin.dashboard");
 
 /** @author Anurag Muthyam */
-export async function GET() {
-  const session = await auth();
+export async function GET(req: NextRequest) {
+  const session = await getApiSession(req);
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
   }

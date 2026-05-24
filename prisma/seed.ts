@@ -11,15 +11,31 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("🌱 Seeding database...\n");
 
+  // Hard-fail if running in production without explicit seed credentials —
+  // the env defaults are intentionally weak ("Admin@123-dev-only") and must
+  // never end up in a live deployment.
+  if (process.env.NODE_ENV === "production") {
+    const missing: string[] = [];
+    if (!process.env.SEED_ADMIN_PASSWORD) missing.push("SEED_ADMIN_PASSWORD");
+    if (!process.env.SEED_CUSTOMER_PASSWORD) missing.push("SEED_CUSTOMER_PASSWORD");
+    if (missing.length > 0) {
+      throw new Error(
+        `Refusing to seed: missing required env vars in production: ${missing.join(", ")}`
+      );
+    }
+  }
+
   // ── Admin ──────────────────────────────────────────────────────────────
-  const passwordHash = await bcrypt.hash("Admin@123", 12);
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || "admin@navagunjara.com";
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Admin@123-dev-only";
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
   const admin = await prisma.admin.upsert({
-    where: { email: "admin@navagunjara.com" },
+    where: { email: adminEmail },
     update: { password: passwordHash },
     create: {
       firstName: "Super",
       lastName: "Admin",
-      email: "admin@navagunjara.com",
+      email: adminEmail,
       password: passwordHash,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -28,14 +44,16 @@ async function main() {
   console.log(`✅ Admin: ${admin.email}`);
 
   // ── Demo Customer ──────────────────────────────────────────────────────
-  const custPw = await bcrypt.hash("Customer@123", 12);
+  const customerEmail = process.env.SEED_CUSTOMER_EMAIL || "priya@example.com";
+  const customerPassword = process.env.SEED_CUSTOMER_PASSWORD || "Customer@123-dev-only";
+  const custPw = await bcrypt.hash(customerPassword, 12);
   const customer = await prisma.customer.upsert({
-    where: { email: "priya@example.com" },
+    where: { email: customerEmail },
     update: {},
     create: {
       firstName: "Priya",
       lastName: "Sharma",
-      email: "priya@example.com",
+      email: customerEmail,
       phone: "+91-9876543210",
       password: custPw,
       addressLine1: "42 MG Road",

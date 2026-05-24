@@ -113,6 +113,16 @@ export const paymentService = {
       throw new Error("PAYMENT_NOT_FOUND");
     }
 
+    // SECURITY: derive the order ID from the stored payment record — never trust
+    // a client-supplied orderId that could point to a different (unpaid) order.
+    if (data.orderId && payment.orderId !== BigInt(data.orderId)) {
+      log.warn(
+        { rzpOrderId: data.razorpay_order_id, claimedOrderId: data.orderId, actualOrderId: payment.orderId.toString() },
+        "verify: orderId mismatch — possible tampering"
+      );
+      throw new Error("ORDER_MISMATCH");
+    }
+
     // Update payment + order in a transaction
     const [updatedPayment] = await db.$transaction([
       db.payment.update({
@@ -125,12 +135,12 @@ export const paymentService = {
         },
       }),
       db.order.update({
-        where: { id: BigInt(data.orderId) },
+        where: { id: payment.orderId },
         data: { status: "CONFIRMED", updatedAt: new Date() },
       }),
     ]);
 
-    log.info({ paymentId: updatedPayment.id.toString(), orderId: data.orderId }, "verify: payment verified and order confirmed");
+    log.info({ paymentId: updatedPayment.id.toString(), orderId: payment.orderId.toString() }, "verify: payment verified and order confirmed");
     return serializeDecimal(updatedPayment);
   },
 
@@ -158,8 +168,16 @@ export const paymentService = {
    */
   async markFailed(paymentId: string, failureReason: string) {
     log.info({ paymentId, failureReason }, "markFailed: marking payment as failed");
+    let parsedId: bigint;
+    try {
+      parsedId = BigInt(paymentId);
+    } catch {
+      throw new Error("PAYMENT_NOT_FOUND");
+    }
+    const existing = await db.payment.findUnique({ where: { id: parsedId } });
+    if (!existing) throw new Error("PAYMENT_NOT_FOUND");
     const updated = await db.payment.update({
-      where: { id: BigInt(paymentId) },
+      where: { id: parsedId },
       data: { status: "FAILED", failureReason, completedAt: new Date() },
     });
     return serializeDecimal(updated);

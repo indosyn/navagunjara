@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/Badge";
@@ -9,6 +9,7 @@ import { useCart } from "@/hooks/useCart";
 import { formatINR } from "@/lib/utils";
 import { ReviewSection } from "@/components/product/ReviewSection";
 import { WishlistButton } from "@/components/product/WishlistButton";
+import { showToast } from "@/components/ui/Toast";
 
 function DetailSkeleton() {
   return (
@@ -32,6 +33,15 @@ export default function ProductDetailPage() {
   const addItem = useCart((s) => s.addItem);
   const [product, setProduct] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [justAdded, setJustAdded] = useState(false);
+  const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetRef.current) clearTimeout(resetRef.current);
+    },
+    []
+  );
 
   useEffect(() => {
     async function load() {
@@ -185,21 +195,48 @@ export default function ProductDetailPage() {
           </div>
 
           <Button
-            variant={outOfStock ? "ghost" : "primary"}
+            variant={outOfStock ? "ghost" : justAdded ? "secondary" : "primary"}
             size="lg"
             disabled={outOfStock}
-            className="w-full md:w-auto"
-            onClick={() =>
+            aria-live="polite"
+            className={`w-full md:w-auto ${
+              justAdded
+                ? "!bg-[var(--color-success)] !text-white !border-transparent animate-bounce-in"
+                : ""
+            }`}
+            onClick={() => {
               addItem({
                 productId: String(product.id),
                 name: product.name as string,
                 price: Number(product.price),
                 imageUrl: (product.imageUrl as string) ?? null,
                 productType: product.productType as "JEWELRY" | "CLOTHING",
-              })
-            }
+              });
+              showToast(`${product.name as string} added to cart`);
+              setJustAdded(true);
+              if (resetRef.current) clearTimeout(resetRef.current);
+              resetRef.current = setTimeout(() => setJustAdded(false), 1400);
+            }}
           >
-            {outOfStock ? "Out of Stock" : "Add to Cart"}
+            {outOfStock ? (
+              "Out of Stock"
+            ) : justAdded ? (
+              <>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={3}
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                Added to Cart!
+              </>
+            ) : (
+              "Add to Cart"
+            )}
           </Button>
         </div>
       </div>

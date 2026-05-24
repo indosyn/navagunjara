@@ -39,6 +39,8 @@ const MOCK_CUSTOMER = {
   state: "Karnataka",
   pincode: "560001",
   country: "IND",
+  status: "ACTIVE",
+  deletedAt: null,
   createdAt: new Date("2024-01-01"),
   updatedAt: new Date("2024-01-01"),
 };

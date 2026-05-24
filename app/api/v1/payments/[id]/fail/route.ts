@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { paymentService } from "@/services/payment.service";
 import { apiSuccess, apiError } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
@@ -21,7 +21,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
+    const session = await getApiSession(req);
     if (!session) {
       const err = apiError("Authentication required", 401);
       return NextResponse.json(err.body, { status: err.status });
@@ -36,7 +36,12 @@ export async function POST(
     const res = apiSuccess(payment, "Payment marked as failed");
     return NextResponse.json(res.body, { status: res.status });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
     log.error({ error }, "POST /api/v1/payments/:id/fail failed");
+    if (message === "PAYMENT_NOT_FOUND") {
+      const err = apiError("Payment not found", 404, "PAYMENT_NOT_FOUND");
+      return NextResponse.json(err.body, { status: err.status });
+    }
     const err = apiError("Failed to update payment", 500);
     return NextResponse.json(err.body, { status: err.status });
   }

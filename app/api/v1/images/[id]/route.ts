@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { imageService } from "@/services/image.service";
 import { apiSuccess, apiError } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
@@ -17,11 +17,11 @@ import { createLogger } from "@/lib/logger";
 const log = createLogger("api.images.id");
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
+    const session = await getApiSession(req);
     if (!session || session.user.role !== "ADMIN") {
       const err = apiError("Admin access required", 403);
       return NextResponse.json(err.body, { status: err.status });

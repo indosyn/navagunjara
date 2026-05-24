@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/hooks/useCart";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -52,6 +52,12 @@ function Header() {
   const totalItems = useCart((s) => s.totalItems);
   const [cartOpen, setCartOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Cart is persisted to localStorage by Zustand; on the server we don't know
+  // its value, so we only render the count badge after hydration to avoid an
+  // SSR/CSR mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const count = mounted ? totalItems() : 0;
 
   const navLinks = [
     { href: "/products", label: "Products" },
@@ -101,9 +107,12 @@ function Header() {
               aria-label="Open shopping cart"
             >
               <ShoppingBagIcon />
-              {totalItems() > 0 ? (
-                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-[var(--color-primary)] text-white text-[10px] font-bold px-1 animate-scale-in">
-                  {totalItems()}
+              {count > 0 ? (
+                <span
+                  key={count}
+                  className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-[var(--color-primary)] text-white text-[10px] font-bold px-1 animate-bounce-in"
+                >
+                  {count}
                 </span>
               ) : null}
             </button>

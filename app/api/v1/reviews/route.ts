@@ -10,11 +10,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { reviewService } from "@/services/review.service";
 import { createReviewSchema } from "@/lib/validations";
 import { apiSuccess, apiError } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const log = createLogger("api.reviews");
 
@@ -45,7 +46,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
+    // Reviews are spammy if unrestricted. 10/min per IP in prod.
+    const blocked = await enforceRateLimit(req, "reviews.create", 10, 60_000);
+    if (blocked) return blocked;
+
+    const session = await getApiSession(req);
     if (!session || session.user.role !== "USER") {
       const err = apiError("Authentication required", 401);
       return NextResponse.json(err.body, { status: err.status });

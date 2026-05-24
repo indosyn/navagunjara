@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { changePasswordSchema } from "@/lib/validations";
 import { customerService } from "@/services/customer.service";
 import { createLogger } from "@/lib/logger";
@@ -17,7 +17,7 @@ import { createLogger } from "@/lib/logger";
 const log = createLogger("api.customers.password");
 
 export async function PUT(req: NextRequest) {
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }

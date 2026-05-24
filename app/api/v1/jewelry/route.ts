@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { createJewelrySchema } from "@/lib/validations";
 import { jewelryService } from "@/services/jewelry.service";
 import { createLogger } from "@/lib/logger";
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
 /** @author Anurag Muthyam */
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }

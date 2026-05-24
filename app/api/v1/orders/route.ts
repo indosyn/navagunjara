@@ -9,16 +9,18 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { createOrderSchema } from "@/lib/validations";
 import { orderService } from "@/services/order.service";
 import { createLogger } from "@/lib/logger";
+import { checkIdempotency, rememberIdempotency } from "@/lib/idempotency";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const log = createLogger("api.orders");
 
 /** @author Anurag Muthyam */
 export async function GET(req: NextRequest) {
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
@@ -47,45 +49,67 @@ export async function GET(req: NextRequest) {
 
 /** @author Anurag Muthyam */
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  // 30 orders per IP per minute in prod (300 in dev/test) is generous for
+  // legitimate use and tight enough to deter automated abuse.
+  const blocked = enforceRateLimit(req, "orders.create", 30, 60_000);
+  if (blocked) return blocked;
+
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
+
+  // Idempotency-Key replay protection: if the client sent the same key
+  // before, return the cached response and skip side effects entirely.
+  const replay = await checkIdempotency(req, "orders.create", session.user.id);
+  if (replay) return replay;
 
   try {
     const body = await req.json();
     const parsed = createOrderSchema.safeParse(body);
     if (!parsed.success) {
       log.warn("Order placement validation failed");
-      return NextResponse.json(
-        { success: false, message: "Validation failed", errorDetail: parsed.error.flatten() },
-        { status: 400 }
-      );
+      const respBody = {
+        success: false,
+        message: "Validation failed",
+        errorDetail: parsed.error.flatten(),
+      };
+      await rememberIdempotency(req, "orders.create", session.user.id, 400, respBody);
+      return NextResponse.json(respBody, { status: 400 });
     }
     log.info({ customerId: parsed.data.customerId }, "Placing order");
     const order = await orderService.place(parsed.data);
     log.info("Order placed");
-    return NextResponse.json(
-      { success: true, message: "Order placed successfully", data: order },
-      { status: 201 }
-    );
+    const respBody = {
+      success: true,
+      message: "Order placed successfully",
+      data: order,
+    };
+    await rememberIdempotency(req, "orders.create", session.user.id, 201, respBody);
+    return NextResponse.json(respBody, { status: 201 });
   } catch (e) {
     if (e instanceof Error) {
       if (e.message === "PRODUCT_NOT_FOUND") {
-        return NextResponse.json(
-          { success: false, message: "One or more products not found" },
-          { status: 404 }
-        );
+        const respBody = {
+          success: false,
+          message: "One or more products not found",
+        };
+        await rememberIdempotency(req, "orders.create", session.user.id, 404, respBody);
+        return NextResponse.json(respBody, { status: 404 });
       }
       if (e.message.startsWith("INSUFFICIENT_STOCK")) {
         log.warn({ detail: e.message }, "Insufficient stock");
-        return NextResponse.json(
-          { success: false, message: "Insufficient stock", errorDetail: e.message },
-          { status: 400 }
-        );
+        const respBody = {
+          success: false,
+          message: "Insufficient stock",
+          errorDetail: e.message,
+        };
+        await rememberIdempotency(req, "orders.create", session.user.id, 400, respBody);
+        return NextResponse.json(respBody, { status: 400 });
       }
     }
     log.error({ err: e }, "Order placement error");
+    // 5xx errors are NOT cached — client should be able to retry.
     return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
   }
 }

@@ -12,7 +12,7 @@ export interface CartItem {
   quantity: number;
 }
 
-interface CartState {
+export interface CartState {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity">) => void;
   removeItem: (productId: string) => void;

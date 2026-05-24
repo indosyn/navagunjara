@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerCustomerSchema } from "@/lib/validations";
 import { customerService } from "@/services/customer.service";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
  * @returns Paginated customer list.
  */
 export async function GET(req: NextRequest) {
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }

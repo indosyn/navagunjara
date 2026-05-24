@@ -18,13 +18,15 @@
 
   /* Neutrals */
   --color-surface: #ffffff;
-  --color-surface-raised: #f9fafb;
+  --color-surface-raised: #fdf6f2;
   --color-surface-overlay: rgba(255, 255, 255, 0.8);
-  --color-background: #faf9f7;
+  /* Page background — warm "ivory rose" with a hint of saffron undertone.
+     Replaces the older flat cream (#faf9f7) for a richer, more premium feel. */
+  --color-background: #fff5ec;
   --color-foreground: #1a1a1a;
   --color-muted: #6b7280;
-  --color-border: #e5e7eb;
-  --color-border-hover: #d1d5db;
+  --color-border: #f0e1d3;
+  --color-border-hover: #e3cdb8;
 
   /* Feedback */
   --color-success: #059669;
@@ -150,12 +152,13 @@ body {
 }
 
 .gradient-hero {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary-50) 0%,
-    var(--color-primary-100) 40%,
-    #fdf4e7 100%
-  );
+  /* Multi-stop warm gradient: saffron → rose → dusty pink, evoking a sunlit
+     Rajasthani palette. More attractive than the older single-tone cream. */
+  background:
+    radial-gradient(at 15% 20%, rgba(217, 119, 6, 0.18) 0%, transparent 55%),
+    radial-gradient(at 85% 0%, rgba(236, 72, 153, 0.14) 0%, transparent 50%),
+    radial-gradient(at 80% 90%, rgba(124, 58, 237, 0.10) 0%, transparent 55%),
+    linear-gradient(135deg, #fff4e6 0%, #ffe9dc 40%, #fcdfe7 100%);
 }
 
 .gradient-text {

@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { reviewService } from "@/services/review.service";
 import { updateReviewSchema } from "@/lib/validations";
 import { apiSuccess, apiError } from "@/lib/utils";
@@ -23,7 +23,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
+    const session = await getApiSession(req);
     if (!session) {
       const err = apiError("Authentication required", 401);
       return NextResponse.json(err.body, { status: err.status });
@@ -59,11 +59,11 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
+    const session = await getApiSession(req);
     if (!session) {
       const err = apiError("Authentication required", 401);
       return NextResponse.json(err.body, { status: err.status });
