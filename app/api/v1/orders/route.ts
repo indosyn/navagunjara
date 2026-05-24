@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   // 30 orders per IP per minute in prod (300 in dev/test) is generous for
   // legitimate use and tight enough to deter automated abuse.
-  const blocked = enforceRateLimit(req, "orders.create", 30, 60_000);
+  const blocked = await enforceRateLimit(req, "orders.create", 30, 60_000);
   if (blocked) return blocked;
 
   const session = await getApiSession(req);

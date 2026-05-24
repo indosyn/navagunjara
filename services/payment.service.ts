@@ -123,6 +123,18 @@ export const paymentService = {
       throw new Error("ORDER_MISMATCH");
     }
 
+    // Idempotency — the Razorpay webhook may have already promoted this
+    // payment to SUCCESS. Re-verifying is a no-op (returns the existing row)
+    // so a duplicate client confirm doesn't reset completedAt or fire side
+    // effects again.
+    if (payment.status === "SUCCESS") {
+      log.info(
+        { paymentId: payment.id.toString() },
+        "verify: payment already SUCCESS (webhook beat client) — no-op"
+      );
+      return serializeDecimal(payment);
+    }
+
     // Update payment + order in a transaction
     const [updatedPayment] = await db.$transaction([
       db.payment.update({

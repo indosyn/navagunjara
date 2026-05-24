@@ -35,7 +35,13 @@ jest.mock("@/lib/razorpay", () => ({
 jest.mock("@/lib/db", () => ({
   db: {
     order: { findUnique: jest.fn(), update: jest.fn() },
-    payment: { updateMany: jest.fn(), findFirst: jest.fn() },
+    payment: {
+      updateMany: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    $transaction: jest.fn(async (ops: unknown[]) => ops.map(() => ({}))),
   },
 }));
 
@@ -155,7 +161,15 @@ describe("POST /api/v1/payments/[id]/confirm", () => {
 });
 
 describe("POST /api/v1/payments/[id]/fail", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default: payment 1 belongs to the test user (id "2"), so ownership
+    // checks pass. Individual tests override as needed.
+    (db.payment.findUnique as jest.Mock).mockResolvedValue({
+      id: BigInt(1),
+      order: { customerId: BigInt(2) },
+    });
+  });
 
   it("401", async () => {
     getSession.mockResolvedValueOnce(null);
@@ -164,6 +178,33 @@ describe("POST /api/v1/payments/[id]/fail", () => {
       paramsFor({ id: "1" })
     );
     expect(res.status).toBe(401);
+  });
+
+  it("403 when the payment belongs to another customer", async () => {
+    getSession.mockResolvedValueOnce(user);
+    (db.payment.findUnique as jest.Mock).mockResolvedValueOnce({
+      id: BigInt(1),
+      order: { customerId: BigInt(999) },
+    });
+    const res = await fail(
+      makeRequest("/api/v1/payments/1/fail", { method: "POST", body: { reason: "x" } }),
+      paramsFor({ id: "1" })
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it("200 admin can fail any payment", async () => {
+    getSession.mockResolvedValueOnce({ user: { id: "99", email: "a@x.com", role: "ADMIN" } });
+    (db.payment.findUnique as jest.Mock).mockResolvedValueOnce({
+      id: BigInt(1),
+      order: { customerId: BigInt(2) },
+    });
+    (paymentService.markFailed as jest.Mock).mockResolvedValueOnce({ id: "p" });
+    const res = await fail(
+      makeRequest("/api/v1/payments/1/fail", { method: "POST", body: { reason: "x" } }),
+      paramsFor({ id: "1" })
+    );
+    expect(res.status).toBe(200);
   });
 
   it("200", async () => {
@@ -275,26 +316,39 @@ describe("POST /api/v1/payments/webhook", () => {
 
   it("200 payment.captured updates payment + order", async () => {
     (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(true);
-    (db.payment.updateMany as jest.Mock).mockResolvedValueOnce({ count: 1 });
-    (db.payment.findFirst as jest.Mock).mockResolvedValueOnce({ orderId: 5n });
-    (db.order.update as jest.Mock).mockResolvedValueOnce({});
+    (db.payment.findFirst as jest.Mock).mockResolvedValueOnce({
+      id: 1n,
+      orderId: 5n,
+      amount: "1000.00",
+      status: "PENDING",
+    });
     const res = await webhook(
       makeRequest("/api/v1/payments/webhook", {
         method: "POST",
         body: {
           event: "payment.captured",
-          payload: { payment: { entity: { id: "pay_x", order_id: "ord_x", status: "captured" } } },
+          payload: {
+            payment: {
+              entity: {
+                id: "pay_x",
+                order_id: "ord_x",
+                status: "captured",
+                amount: 100000,
+                method: "upi",
+              },
+            },
+          },
         },
         headers: { "x-razorpay-signature": "ok" },
       })
     );
     expect(res.status).toBe(200);
-    expect(db.order.update).toHaveBeenCalled();
+    expect(db.$transaction).toHaveBeenCalled();
   });
 
   it("200 payment.captured for unknown razorpay order (no payment row)", async () => {
     (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(true);
-    (db.payment.updateMany as jest.Mock).mockResolvedValueOnce({ count: 0 });
+    (db.payment.findFirst as jest.Mock).mockResolvedValueOnce(null);
     const res = await webhook(
       makeRequest("/api/v1/payments/webhook", {
         method: "POST",
@@ -306,7 +360,59 @@ describe("POST /api/v1/payments/webhook", () => {
       })
     );
     expect(res.status).toBe(200);
-    expect(db.order.update).not.toHaveBeenCalled();
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("200 payment.captured is a no-op when payment already SUCCESS", async () => {
+    (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(true);
+    (db.payment.findFirst as jest.Mock).mockResolvedValueOnce({
+      id: 1n,
+      orderId: 5n,
+      amount: "1000.00",
+      status: "SUCCESS",
+    });
+    const res = await webhook(
+      makeRequest("/api/v1/payments/webhook", {
+        method: "POST",
+        body: {
+          event: "payment.captured",
+          payload: {
+            payment: {
+              entity: { id: "pay_x", order_id: "ord_x", status: "captured", amount: 100000 },
+            },
+          },
+        },
+        headers: { "x-razorpay-signature": "ok" },
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(db.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("200 payment.captured rejects amount mismatch (no DB write)", async () => {
+    (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(true);
+    (db.payment.findFirst as jest.Mock).mockResolvedValueOnce({
+      id: 1n,
+      orderId: 5n,
+      amount: "1000.00",
+      status: "PENDING",
+    });
+    const res = await webhook(
+      makeRequest("/api/v1/payments/webhook", {
+        method: "POST",
+        body: {
+          event: "payment.captured",
+          payload: {
+            payment: {
+              entity: { id: "pay_x", order_id: "ord_x", status: "captured", amount: 100 },
+            },
+          },
+        },
+        headers: { "x-razorpay-signature": "ok" },
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(db.$transaction).not.toHaveBeenCalled();
   });
 
   it("200 payment.failed updates payment", async () => {
@@ -352,7 +458,7 @@ describe("POST /api/v1/payments/webhook", () => {
 
   it("500 when db handler throws", async () => {
     (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(true);
-    (db.payment.updateMany as jest.Mock).mockRejectedValueOnce(new Error("db"));
+    (db.payment.findFirst as jest.Mock).mockRejectedValueOnce(new Error("db"));
     const res = await webhook(
       makeRequest("/api/v1/payments/webhook", {
         method: "POST",

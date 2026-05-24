@@ -6,12 +6,15 @@
  * `RAZORPAY_WEBHOOK_SECRET`, then update the local Payment + Order records
  * for the events we care about:
  *
- *   - `payment.captured` → mark Payment SUCCESS, Order PAID
+ *   - `payment.captured` → mark Payment SUCCESS, Order CONFIRMED
+ *   - `order.paid`       → same as payment.captured (defensive fallback)
  *   - `payment.failed`   → mark Payment FAILED (Order left as-is)
  *
  * This endpoint is intentionally idempotent — Razorpay may retry on
- * non-2xx responses, so we always return 200 unless the signature itself
- * is invalid (which returns 401 so Razorpay knows the delivery is broken).
+ * non-2xx responses (and may fire `payment.captured` + `order.paid` for the
+ * same successful payment), so duplicate deliveries are no-ops. We always
+ * return 200 unless the signature itself is invalid (which returns 401 so
+ * Razorpay knows the delivery is broken).
  *
  * @route POST /api/v1/payments/webhook
  * @auth  Public (signature-verified)
@@ -44,7 +47,95 @@ interface RazorpayWebhookEvent {
   event: string;
   payload?: {
     payment?: { entity?: RazorpayWebhookPayment };
+    order?: { entity?: { id: string; amount?: number } };
   };
+}
+
+/**
+ * Normalise Razorpay's payment-method strings (`upi`, `card`, `netbanking`,
+ * `wallet`, `emi`, `paylater`, …) to the upper-case form we store in the
+ * `payments.method` column.
+ */
+function normaliseMethod(raw: string | undefined): string {
+  if (!raw) return "UNKNOWN";
+  const m = raw.toLowerCase();
+  if (m === "netbanking") return "NET_BANKING";
+  if (m === "paylater") return "PAY_LATER";
+  return m.toUpperCase();
+}
+
+async function applyCapture(
+  razorpayOrderId: string,
+  razorpayPaymentId: string,
+  amount: number | undefined,
+  method: string | undefined
+): Promise<void> {
+  const paymentRow = await db.payment.findFirst({
+    where: { razorpayOrderId },
+    select: { id: true, orderId: true, amount: true, status: true },
+  });
+  if (!paymentRow) {
+    log.warn({ razorpayOrderId }, "webhook: capture for unknown razorpay order");
+    return;
+  }
+
+  // Idempotency — Razorpay retries deliveries and also fires both
+  // `payment.captured` and `order.paid` for the same payment. Skip if
+  // we've already recorded SUCCESS.
+  if (paymentRow.status === "SUCCESS") {
+    log.debug(
+      { razorpayOrderId, paymentId: paymentRow.id.toString() },
+      "webhook: payment already SUCCESS, skipping duplicate"
+    );
+    return;
+  }
+
+  // Amount tamper check — Razorpay reports `amount` in paise. Our stored
+  // amount is in rupees as a Decimal. Allow only an exact match.
+  if (typeof amount === "number") {
+    const expectedPaise = Math.round(Number(paymentRow.amount) * 100);
+    if (amount !== expectedPaise) {
+      log.error(
+        {
+          razorpayOrderId,
+          paymentId: paymentRow.id.toString(),
+          expectedPaise,
+          receivedPaise: amount,
+        },
+        "webhook: amount mismatch — refusing to mark as paid"
+      );
+      return;
+    }
+  }
+
+  await db.$transaction([
+    db.payment.update({
+      where: { id: paymentRow.id },
+      data: {
+        status: "SUCCESS",
+        razorpayPaymentId,
+        // Persist the real method Razorpay observed (upi/card/netbanking/…).
+        method: normaliseMethod(method),
+        completedAt: new Date(),
+      },
+    }),
+    db.order.update({
+      where: { id: paymentRow.orderId },
+      // CONFIRMED is the canonical post-payment status in our system
+      // (see lib/validations.ts orderStatusUpdateSchema enum).
+      data: { status: "CONFIRMED", updatedAt: new Date() },
+    }),
+  ]);
+
+  log.info(
+    {
+      razorpayOrderId,
+      paymentId: paymentRow.id.toString(),
+      orderId: paymentRow.orderId.toString(),
+      method: normaliseMethod(method),
+    },
+    "webhook: payment captured and order confirmed"
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -72,66 +163,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, ignored: "malformed" });
   }
 
-  const payment = event.payload?.payment?.entity;
-  if (!payment) {
-    log.info({ event: event.event }, "webhook: event without payment entity, ignored");
-    return NextResponse.json({ success: true, ignored: "no-payment-entity" });
-  }
-
   try {
     switch (event.event) {
       case "payment.captured": {
-        const updated = await db.payment.updateMany({
-          where: { razorpayOrderId: payment.order_id },
-          data: {
-            status: "SUCCESS",
-            razorpayPaymentId: payment.id,
-            completedAt: new Date(),
-          },
-        });
+        const p = event.payload?.payment?.entity;
+        if (!p) break;
+        await applyCapture(p.order_id, p.id, p.amount, p.method);
+        break;
+      }
 
-        if (updated.count > 0) {
-          // Promote the corresponding order to PAID. We look up via the
-          // razorpay_order_id so the same logic works whether the user
-          // confirmed via the SPA confirm endpoint or only via webhook.
-          const paymentRow = await db.payment.findFirst({
-            where: { razorpayOrderId: payment.order_id },
-            select: { orderId: true },
-          });
-          if (paymentRow) {
-            await db.order.update({
-              where: { id: paymentRow.orderId },
-              data: { status: "PAID", updatedAt: new Date() },
-            });
-          }
-          log.info(
-            { razorpayOrderId: payment.order_id, paymentId: payment.id },
-            "webhook: payment captured"
-          );
-        } else {
-          log.warn(
-            { razorpayOrderId: payment.order_id },
-            "webhook: payment.captured for unknown razorpay order"
-          );
+      case "order.paid": {
+        // Defensive fallback — fires alongside payment.captured but covers the
+        // case where the captured event was missed. applyCapture is idempotent.
+        const p = event.payload?.payment?.entity;
+        const o = event.payload?.order?.entity;
+        if (p) {
+          await applyCapture(p.order_id, p.id, p.amount, p.method);
+        } else if (o) {
+          log.info({ rzpOrderId: o.id }, "webhook: order.paid without payment entity");
         }
         break;
       }
 
       case "payment.failed": {
+        const p = event.payload?.payment?.entity;
+        if (!p) break;
         await db.payment.updateMany({
-          where: { razorpayOrderId: payment.order_id },
+          where: { razorpayOrderId: p.order_id, status: { not: "SUCCESS" } },
           data: {
             status: "FAILED",
-            razorpayPaymentId: payment.id,
+            razorpayPaymentId: p.id,
             failureReason:
-              payment.error_description?.slice(0, 500) ??
-              payment.error_code ??
+              p.error_description?.slice(0, 500) ??
+              p.error_code ??
               "Razorpay reported payment failure",
             completedAt: new Date(),
           },
         });
         log.info(
-          { razorpayOrderId: payment.order_id, code: payment.error_code },
+          { razorpayOrderId: p.order_id, code: p.error_code },
           "webhook: payment failed"
         );
         break;

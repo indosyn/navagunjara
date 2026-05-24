@@ -21,13 +21,19 @@ const log = createLogger("api.payments");
 
 const initiateSchema = z.object({
   orderId: z.number().int().positive(),
-  method: z.enum(["UPI", "CARD", "NET_BANKING", "WALLET"]),
+  // The user picks the actual payment method inside Razorpay's hosted Checkout
+  // modal, so we don't know it at initiation time. We accept any of these
+  // hint values; the webhook later overwrites with the real method Razorpay
+  // observed (upi/card/netbanking/wallet/emi/paylater/…).
+  method: z
+    .enum(["UPI", "CARD", "NET_BANKING", "WALLET", "EMI", "PAY_LATER", "PENDING"])
+    .default("PENDING"),
 });
 
 export async function POST(req: NextRequest) {
   try {
     // 30 payment-init requests per IP per minute in prod.
-    const blocked = enforceRateLimit(req, "payments.create", 30, 60_000);
+    const blocked = await enforceRateLimit(req, "payments.create", 30, 60_000);
     if (blocked) return blocked;
 
     const session = await getApiSession(req);
