@@ -56,6 +56,7 @@ function Header() {
   // its value, so we only render the count badge after hydration to avoid an
   // SSR/CSR mismatch.
   const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
   const count = mounted ? totalItems() : 0;
 
