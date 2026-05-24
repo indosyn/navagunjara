@@ -89,12 +89,26 @@ export const orderService = {
         },
       });
 
-      // Decrement stock
+      // Atomically decrement stock with an inline guard. We use `updateMany`
+      // (not `update`) so we can filter by both id AND `stockQuantity >= qty`
+      // in the same statement. If two concurrent orders try to claim the
+      // last unit, only one update will affect a row; the other returns
+      // `count: 0` and we throw INSUFFICIENT_STOCK, rolling back the txn.
       for (const item of data.items) {
-        await tx.product.update({
-          where: { id: BigInt(item.productId) },
+        const result = await tx.product.updateMany({
+          where: {
+            id: BigInt(item.productId),
+            stockQuantity: { gte: item.quantity },
+          },
           data: { stockQuantity: { decrement: item.quantity } },
         });
+        if (result.count === 0) {
+          log.warn(
+            { productId: item.productId, requested: item.quantity },
+            "place: atomic stock decrement failed — concurrent oversell prevented"
+          );
+          throw new Error(`INSUFFICIENT_STOCK:${item.productId}`);
+        }
       }
 
       return newOrder;

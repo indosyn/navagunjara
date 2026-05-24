@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { paymentService } from "@/services/payment.service";
 import { apiSuccess, apiError } from "@/lib/utils";
 import { createLogger } from "@/lib/logger";
@@ -17,11 +17,11 @@ import { createLogger } from "@/lib/logger";
 const log = createLogger("api.payments.order");
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const session = await auth();
+    const session = await getApiSession(req);
     if (!session) {
       const err = apiError("Authentication required", 401);
       return NextResponse.json(err.body, { status: err.status });

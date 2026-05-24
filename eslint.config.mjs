@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated docs
     "docs/**",
+    // Plain Node.js utility scripts — not TypeScript, require() is intentional
+    "scripts/**",
   ]),
 ]);
 

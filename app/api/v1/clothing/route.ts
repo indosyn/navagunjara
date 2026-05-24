@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { createClothingSchema } from "@/lib/validations";
 import { clothingService } from "@/services/clothing.service";
 import { createLogger } from "@/lib/logger";
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
   }

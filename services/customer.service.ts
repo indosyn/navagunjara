@@ -88,13 +88,21 @@ export const customerService = {
 
   /**
    * Retrieve a single customer by email address (used for auth).
+   * Returns `null` for deactivated/anonymized accounts so they cannot log in.
    *
    * @param email - Customer's email.
    * @returns The raw Prisma customer or `null`.
    */
   async findByEmail(email: string) {
     log.debug({ email }, "findByEmail: looking up customer");
-    return db.customer.findUnique({ where: { email } });
+    const customer = await db.customer.findUnique({ where: { email } });
+    if (!customer || customer.status !== "ACTIVE") {
+      if (customer) {
+        log.warn({ email, status: customer.status }, "findByEmail: inactive account ignored");
+      }
+      return null;
+    }
+    return customer;
   },
 
   /**
@@ -144,7 +152,12 @@ export const customerService = {
     const newHash = await bcrypt.hash(data.newPassword, 12);
     await db.customer.update({
       where: { id: BigInt(id) },
-      data: { password: newHash, updatedAt: new Date() },
+      // Bump tokenVersion to invalidate all outstanding JWTs for this user.
+      data: {
+        password: newHash,
+        tokenVersion: { increment: 1 },
+        updatedAt: new Date(),
+      },
     });
 
     log.info({ id }, "changePassword: password updated");
@@ -162,11 +175,12 @@ export const customerService = {
 
     const [customers, total] = await Promise.all([
       db.customer.findMany({
+        where: { status: "ACTIVE" },
         skip: page * size,
         take: size,
         orderBy: { createdAt: "desc" },
       }),
-      db.customer.count(),
+      db.customer.count({ where: { status: "ACTIVE" } }),
     ]);
 
     log.debug({ page, count: customers.length, total }, "list: fetched customers");
@@ -178,6 +192,72 @@ export const customerService = {
       totalPages: Math.ceil(total / size),
       last: (page + 1) * size >= total,
     };
+  },
+
+  /**
+   * Soft-delete a customer account. The row, orders, reviews, and wishlist
+   * are all preserved — only the `status` flips to `DEACTIVATED` so the user
+   * can no longer log in. This is the ONLY supported way to "delete" a
+   * customer from application code. Hard `db.customer.delete()` calls are
+   * forbidden and the database is configured with `onDelete: Restrict` on all
+   * customer-owning tables so a stray delete will fail at the SQL level.
+   *
+   * @param id - Customer ID.
+   * @returns The deactivated customer (without password).
+   * @throws `NOT_FOUND` if customer does not exist.
+   */
+  async deactivate(id: string) {
+    log.info({ id }, "deactivate: marking customer DEACTIVATED");
+    const existing = await db.customer.findUnique({ where: { id: BigInt(id) } });
+    if (!existing) {
+      log.warn({ id }, "deactivate: customer not found");
+      throw new Error("NOT_FOUND");
+    }
+    const updated = await db.customer.update({
+      where: { id: BigInt(id) },
+      data: { status: "DEACTIVATED", deletedAt: new Date(), updatedAt: new Date() },
+    });
+    log.info({ id }, "deactivate: account deactivated; history retained");
+    return omitPassword(serializeDecimal(updated) as Record<string, unknown>);
+  },
+
+  /**
+   * GDPR-style right-to-erasure: overwrite all personally-identifying fields
+   * with placeholders while keeping the customer row (and therefore all
+   * historical orders, invoices, and reviews) intact. The row's id is
+   * preserved so foreign-key integrity is never violated.
+   *
+   * @param id - Customer ID.
+   * @returns The anonymized customer (without password).
+   * @throws `NOT_FOUND` if customer does not exist.
+   */
+  async anonymize(id: string) {
+    log.info({ id }, "anonymize: scrubbing PII for customer");
+    const existing = await db.customer.findUnique({ where: { id: BigInt(id) } });
+    if (!existing) {
+      log.warn({ id }, "anonymize: customer not found");
+      throw new Error("NOT_FOUND");
+    }
+    const updated = await db.customer.update({
+      where: { id: BigInt(id) },
+      data: {
+        firstName: "Deleted",
+        lastName: "User",
+        email: `deleted+${id}@navagunjara.invalid`,
+        phone: "0000000000",
+        password: "",
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        pincode: null,
+        status: "ANONYMIZED",
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+    log.info({ id }, "anonymize: PII scrubbed; order history retained");
+    return omitPassword(serializeDecimal(updated) as Record<string, unknown>);
   },
 };
 

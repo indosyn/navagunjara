@@ -19,15 +19,16 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
+import { env } from "@/lib/env";
+import { invalidateTokenVersionCache } from "@/lib/api-auth";
 
 const log = createLogger("api.auth.login");
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET ?? "dev-secret"
-);
+const JWT_SECRET = new TextEncoder().encode(env.NEXTAUTH_SECRET);
 
-// 10 login attempts per minute per IP
-const LOGIN_RATE_LIMIT = 10;
+// Login attempts allowed per minute per IP. Tighter in production, relaxed
+// in development/test to support integration suites (Postman/Newman).
+const LOGIN_RATE_LIMIT = env.NODE_ENV === "production" ? 10 : 200;
 const LOGIN_WINDOW_MS = 60_000;
 
 /**
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   try {
     // Rate limit by IP
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const { allowed, resetMs } = rateLimit(ip, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS);
+    const { allowed, resetMs } = await rateLimit(ip, LOGIN_RATE_LIMIT, LOGIN_WINDOW_MS);
     if (!allowed) {
       log.warn({ ip }, "Login rate limit exceeded");
       return NextResponse.json(
@@ -86,10 +87,17 @@ export async function POST(req: NextRequest) {
         id: admin.id.toString(),
         email: admin.email,
         role: "ADMIN",
+        // tokenVersion stamp — used by api-auth to invalidate sessions
+        // after a password change or forced logout.
+        tv: admin.tokenVersion,
       })
         .setProtectedHeader({ alg: "HS256" })
         .setExpirationTime("24h")
         .sign(JWT_SECRET);
+
+      // Drop any stale cached tv for this admin; subsequent requests will
+      // read the same value we just signed into the token.
+      invalidateTokenVersionCache("ADMIN", admin.id);
 
       log.info({ email, role: "ADMIN" }, "Admin login successful");
       return NextResponse.json({
@@ -117,6 +125,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Reject deactivated / anonymized accounts. Generic 401 to avoid
+    // leaking which emails exist in the system.
+    if (customer.status !== "ACTIVE") {
+      log.warn({ email, status: customer.status }, "Login blocked: account not active");
+      return NextResponse.json(
+        { success: false, message: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
     const valid = await bcrypt.compare(password, customer.password);
     if (!valid) {
       log.warn({ email }, "Invalid customer credentials");
@@ -130,10 +148,13 @@ export async function POST(req: NextRequest) {
       id: customer.id.toString(),
       email: customer.email,
       role: "USER",
+      tv: customer.tokenVersion,
     })
       .setProtectedHeader({ alg: "HS256" })
       .setExpirationTime("24h")
       .sign(JWT_SECRET);
+
+    invalidateTokenVersionCache("USER", customer.id);
 
     log.info({ email, role: "USER" }, "Customer login successful");
     return NextResponse.json({

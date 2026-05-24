@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { updateJewelrySchema } from "@/lib/validations";
 import { jewelryService } from "@/services/jewelry.service";
 import { createLogger } from "@/lib/logger";
@@ -39,7 +39,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
   }
@@ -68,11 +68,11 @@ export async function PUT(
 
 /** @author Anurag Muthyam */
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
   }

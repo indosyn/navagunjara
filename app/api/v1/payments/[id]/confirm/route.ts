@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { paymentService } from "@/services/payment.service";
 import { razorpayVerifySchema } from "@/lib/validations";
 import { apiSuccess, apiError } from "@/lib/utils";
@@ -21,7 +21,7 @@ const log = createLogger("api.payments.confirm");
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
+    const session = await getApiSession(req);
     if (!session) {
       const err = apiError("Authentication required", 401);
       return NextResponse.json(err.body, { status: err.status });

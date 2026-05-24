@@ -81,6 +81,11 @@ export default async function HomePage() {
                   Shop Jewelry
                 </Button>
               </Link>
+              <Link href="/products?type=CLOTHING">
+                <Button variant="outline" size="lg">
+                  Shop Clothing
+                </Button>
+              </Link>
             </div>
           </div>
 

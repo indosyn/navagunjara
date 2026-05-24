@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerCustomerSchema } from "@/lib/validations";
 import { customerService } from "@/services/customer.service";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -31,7 +31,7 @@ const REGISTER_WINDOW_MS = 60_000;
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    const { allowed, resetMs } = rateLimit(`register:${ip}`, REGISTER_RATE_LIMIT, REGISTER_WINDOW_MS);
+    const { allowed, resetMs } = await rateLimit(`register:${ip}`, REGISTER_RATE_LIMIT, REGISTER_WINDOW_MS);
     if (!allowed) {
       log.warn({ ip }, "Registration rate limit exceeded");
       return NextResponse.json(
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
  * @returns Paginated customer list.
  */
 export async function GET(req: NextRequest) {
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }

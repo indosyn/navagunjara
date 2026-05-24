@@ -52,11 +52,14 @@ export function RazorpayCheckout({
     setLoading(true);
 
     try {
-      // Step 1: Create Razorpay order on backend
+      // Step 1: Create Razorpay order on backend. The user picks the real
+      // payment method inside Razorpay's hosted Checkout modal, so we send
+      // PENDING as a placeholder — the webhook later overwrites with the
+      // observed method.
       const res = await fetch("/api/v1/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: Number(orderId), method: "CARD" }),
+        body: JSON.stringify({ orderId: Number(orderId), method: "PENDING" }),
       });
       const json = await res.json();
       if (!res.ok) {

@@ -90,16 +90,21 @@ export const imageService = {
   async remove(imageId: string) {
     log.info({ imageId }, "remove: deleting image");
 
-    const image = await db.productImage.findUnique({
-      where: { id: BigInt(imageId) },
-    });
+    let parsedId: bigint;
+    try {
+      parsedId = BigInt(imageId);
+    } catch {
+      throw new Error("NOT_FOUND");
+    }
+
+    const image = await db.productImage.findUnique({ where: { id: parsedId } });
     if (!image) throw new Error("NOT_FOUND");
 
     if (image.publicId) {
       await deleteImage(image.publicId);
     }
 
-    await db.productImage.delete({ where: { id: BigInt(imageId) } });
+    await db.productImage.delete({ where: { id: parsedId } });
     log.info({ imageId, publicId: image.publicId }, "remove: image deleted");
   },
 };

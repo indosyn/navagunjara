@@ -58,6 +58,7 @@ navagunjara-backend/
 .env.local
 .env.production
 .env.preprod
+.env.vercel
 
 ### ─── Next.js ─── ###
 .next/

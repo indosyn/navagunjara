@@ -9,14 +9,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getApiSession } from "@/lib/api-auth";
 import { customerService } from "@/services/customer.service";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api.customers");
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
+  const session = await getApiSession(req);
   if (!session) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }

@@ -11,7 +11,20 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("email");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-initialised Resend client. Constructed on first use so that builds and
+// environments without RESEND_API_KEY do not crash at module load. When the
+// key is missing, sends become no-ops with a warning.
+let resendClient: Resend | null = null;
+function getResend(): Resend | null {
+  if (resendClient) return resendClient;
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    log.warn("RESEND_API_KEY not set \u2014 emails will be skipped");
+    return null;
+  }
+  resendClient = new Resend(key);
+  return resendClient;
+}
 const FROM = process.env.RESEND_FROM_EMAIL ?? "orders@navagunjara.com";
 
 /**
@@ -27,8 +40,8 @@ export async function sendOrderConfirmation(
   orderId: string,
   total: string,
   itemCount: number
-): Promise<void> {
-  try {
+): Promise<void> {  const resend = getResend();
+  if (!resend) return;  try {
     await resend.emails.send({
       from: `Navagunjara <${FROM}>`,
       to,
@@ -63,8 +76,8 @@ export async function sendOrderConfirmation(
 export async function sendShippingNotification(
   to: string,
   orderId: string
-): Promise<void> {
-  try {
+): Promise<void> {  const resend = getResend();
+  if (!resend) return;  try {
     await resend.emails.send({
       from: `Navagunjara <${FROM}>`,
       to,
@@ -94,8 +107,8 @@ export async function sendShippingNotification(
 export async function sendDeliveryConfirmation(
   to: string,
   orderId: string
-): Promise<void> {
-  try {
+): Promise<void> {  const resend = getResend();
+  if (!resend) return;  try {
     await resend.emails.send({
       from: `Navagunjara <${FROM}>`,
       to,

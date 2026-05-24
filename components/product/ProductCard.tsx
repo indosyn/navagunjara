@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
@@ -28,6 +29,15 @@ export function ProductCard({
 }: ProductCardProps) {
   const addItem = useCart((s) => s.addItem);
   const outOfStock = stockQuantity <= 0;
+  const [justAdded, setJustAdded] = useState(false);
+  const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetRef.current) clearTimeout(resetRef.current);
+    },
+    []
+  );
 
   return (
     <div className="group rounded-xl border border-[var(--color-border)] bg-white overflow-hidden card-hover">
@@ -71,10 +81,15 @@ export function ProductCard({
           {formatINR(price)}
         </p>
         <Button
-          variant={outOfStock ? "ghost" : "primary"}
+          variant={outOfStock ? "ghost" : justAdded ? "secondary" : "primary"}
           size="sm"
-          className="w-full mt-3"
+          className={`w-full mt-3 ${
+            justAdded
+              ? "!bg-[var(--color-success)] !text-white !border-transparent animate-bounce-in"
+              : ""
+          }`}
           disabled={outOfStock}
+          aria-live="polite"
           onClick={() => {
             addItem({
               productId: id,
@@ -84,9 +99,30 @@ export function ProductCard({
               productType,
             });
             showToast(`${name} added to cart`);
+            setJustAdded(true);
+            if (resetRef.current) clearTimeout(resetRef.current);
+            resetRef.current = setTimeout(() => setJustAdded(false), 1400);
           }}
         >
-          {outOfStock ? "Out of Stock" : "Add to Cart"}
+          {outOfStock ? (
+            "Out of Stock"
+          ) : justAdded ? (
+            <>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={3}
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              Added!
+            </>
+          ) : (
+            "Add to Cart"
+          )}
         </Button>
       </div>
     </div>
