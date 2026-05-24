@@ -86,6 +86,14 @@ jobs:
       NEXTAUTH_SECRET: ci-build-secret-placeholder-must-be-32chars-min
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_TELEMETRY_DISABLED: '1'
+      # New prod-required env vars added for production hardening. CI only
+      # needs them to satisfy env validation during `next build` — they are
+      # never used at runtime in CI.
+      RAZORPAY_KEY_ID: rzp_test_ci_placeholder
+      RAZORPAY_KEY_SECRET: ci_placeholder_secret
+      RAZORPAY_WEBHOOK_SECRET: ci_placeholder_webhook_secret
+      SEED_ADMIN_PASSWORD: CiPlaceholder@AdminPass1!
+      SEED_CUSTOMER_PASSWORD: CiPlaceholder@CustPass1!
     steps:
       - uses: actions/checkout@v4
 
@@ -130,6 +138,9 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       SEED_ADMIN_PASSWORD: CiAdmin@1234
       SEED_CUSTOMER_PASSWORD: CiCustomer@1234
+      RAZORPAY_KEY_ID: rzp_test_ci_placeholder
+      RAZORPAY_KEY_SECRET: ci_placeholder_secret
+      RAZORPAY_WEBHOOK_SECRET: ci_placeholder_webhook_secret
     steps:
       - uses: actions/checkout@v4
 
